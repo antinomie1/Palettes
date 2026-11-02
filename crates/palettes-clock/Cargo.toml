@@ -1,0 +1,14 @@
+[package]
+name = "palettes-clock"
+description = "Local time formatting and wall-clock ticks that sleep until the next visible change"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+libc = "0.2"
+
+[lints]
+workspace = true

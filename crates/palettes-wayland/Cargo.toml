@@ -1,0 +1,21 @@
+[package]
+name = "palettes-wayland"
+description = "A Wayland client for desktop-shell surfaces: layer surfaces, popups, outputs and seat input"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+aegle-platform.workspace = true
+aegle-types = { workspace = true, features = ["std"] }
+raw-window-handle.workspace = true
+rustix = { version = "1", features = ["event", "std"] }
+wayland-client.workspace = true
+wayland-protocols = { workspace = true, features = ["unstable"] }
+wayland-protocols-wlr.workspace = true
+xkbcommon = { workspace = true, features = ["wayland"] }
+
+[lints]
+workspace = true

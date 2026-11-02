@@ -1,0 +1,46 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "BSD-2-Clause"
+repository = "https://github.com/antinomie1/Palettes"
+
+[workspace.dependencies]
+palettes-clock = { path = "crates/palettes-clock" }
+palettes-workspace = { path = "crates/palettes-workspace" }
+palettes-audio = { path = "crates/palettes-audio" }
+palettes-wayland = { path = "crates/palettes-wayland" }
+palettes-shell = { path = "crates/palettes-shell" }
+# One aegle for every control library (am3 uses the same source). See AGENTS.md.
+aegle-platform = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-types = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-ui = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-widgets = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-loader = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-scene = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-render-vulkan = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["text", "window"] }
+raw-window-handle = "0.6.2"
+wayland-client = { version = "0.31.15", features = ["system"] }
+wayland-protocols = { version = "0.32.13", features = ["client", "staging"] }
+wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
+xkbcommon = { version = "0.8.0", default-features = false }
+# Pastel's protocol crate. A sibling checkout until Pastel publishes it; see AGENTS.md.
+pastel-ipc = { path = "../Pastel/crates/pastel-ipc" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[workspace.lints.rust]
+missing_docs = "warn"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+# aegle's text and renderer crates have per-pixel loops.
+[profile.dev.package."*"]
+opt-level = 2
