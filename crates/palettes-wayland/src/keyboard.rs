@@ -84,10 +84,10 @@ impl Keyboard {
     }
 
     pub fn release(&mut self) {
-        if let Some(keyboard) = self.keyboard.take() {
-            if keyboard.version() >= 3 {
-                keyboard.release();
-            }
+        if let Some(keyboard) = self.keyboard.take()
+            && keyboard.version() >= 3
+        {
+            keyboard.release();
         }
         self.focus = None;
         self.repeat = None;

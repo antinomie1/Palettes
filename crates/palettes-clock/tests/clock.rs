@@ -1,3 +1,5 @@
+//! The clock: periods, local formatting and realtime ticks.
+
 use palettes_clock::{LocalTime, Period, Ticker, format};
 use std::{
     sync::mpsc,
@@ -32,7 +34,10 @@ fn formats_in_the_local_zone() {
 #[test]
 fn ticker_ticks_at_once_and_on_the_second() {
     let (send, receive) = mpsc::channel();
-    let ticker = Ticker::spawn(Period::Second, move |at| drop(send.send(at))).unwrap();
+    let ticker = Ticker::spawn(Period::Second, move |at| {
+        let _ = send.send(at);
+    })
+    .unwrap();
     let first = receive.recv_timeout(Duration::from_secs(1)).unwrap();
     let second = receive.recv_timeout(Duration::from_secs(2)).unwrap();
     assert!(second > first);

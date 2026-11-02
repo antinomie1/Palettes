@@ -17,6 +17,7 @@ use std::{
 
 type ErrorHandler = Box<dyn FnMut(Box<dyn std::error::Error>) -> Result<()>>;
 type Build = Box<dyn FnMut(&Shell, &OutputInfo) -> Result<Surface>>;
+type OutputsHandler = Rc<RefCell<dyn FnMut(&Shell) -> Result<()>>>;
 
 /// Surfaces built per output by [`Shell::each_output`].
 struct PerOutput {
@@ -29,7 +30,7 @@ pub(crate) struct Inner {
     dispatching: Cell<bool>,
     quit: Cell<bool>,
     on_error: RefCell<Option<ErrorHandler>>,
-    on_outputs: RefCell<Vec<Rc<RefCell<dyn FnMut(&Shell) -> Result<()>>>>>,
+    on_outputs: RefCell<Vec<OutputsHandler>>,
     per_output: RefCell<Vec<PerOutput>>,
     drains: RefCell<Vec<Rc<dyn Drain>>>,
     wake: WakeHandle,

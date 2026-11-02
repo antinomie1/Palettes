@@ -72,10 +72,10 @@ fn parse(id: String, text: &str, locales: &[String]) -> Option<DesktopEntry> {
                 else {
                     continue;
                 };
-                if let Some(rank) = locales.iter().position(|l| l == locale) {
-                    if localized.as_ref().is_none_or(|(best, _)| rank < *best) {
-                        localized = Some((rank, value.to_owned()));
-                    }
+                if let Some(rank) = locales.iter().position(|l| l == locale)
+                    && localized.as_ref().is_none_or(|(best, _)| rank < *best)
+                {
+                    localized = Some((rank, value.to_owned()));
                 }
             }
         }

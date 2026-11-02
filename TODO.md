@@ -8,7 +8,7 @@
 - [x] `palettes-clock`: formatting and realtime ticks
 - [x] `palettes-workspace`: neutral model, Pastel IPC backend
 - [x] Pastel: `pastel-ipc` crate, IPC socket with workspace/window events and actions
-- [ ] `palettes-audio`: PipeWire default sink/source volume and mute
+- [x] `palettes-audio`: PipeWire default sink/source volume and mute (through device routes)
 - [x] `palettes-assets`: asset roots, icon themes and desktop entries, fonts dir, file watcher
 - [ ] `palettes`: facade, services on the UI thread, markup Panel element, shell states,
       host actions, per-output panels, hot reload, runner binary

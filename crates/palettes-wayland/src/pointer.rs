@@ -135,10 +135,10 @@ impl Seat {
 
     /// Shows `cursor` if the pointer is over `window`.
     pub fn show_cursor(&self, window: WindowId, cursor: Cursor) {
-        if self.pointer_focus == Some(window) {
-            if let Some(device) = &self.cursor {
-                device.set_shape(self.enter_serial, shape(cursor));
-            }
+        if self.pointer_focus == Some(window)
+            && let Some(device) = &self.cursor
+        {
+            device.set_shape(self.enter_serial, shape(cursor));
         }
     }
 }

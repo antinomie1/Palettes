@@ -1,3 +1,5 @@
+//! The Pastel backend against a fake Pastel socket.
+
 use palettes_workspace::{Command, Compositor, Desktop};
 use pastel_ipc::{Reply, Request, decode, encode};
 use std::io::{BufRead, BufReader, Write};

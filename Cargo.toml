@@ -32,8 +32,6 @@ wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
 xkbcommon = { version = "0.8.0", default-features = false }
 # Pastel's protocol crate. A sibling checkout until Pastel publishes it; see AGENTS.md.
 pastel-ipc = { path = "../Pastel/crates/pastel-ipc" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 
 [workspace.lints.rust]
 missing_docs = "warn"

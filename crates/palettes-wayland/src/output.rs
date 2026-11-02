@@ -124,10 +124,10 @@ impl Dispatch<WlOutput, u32> for State {
                 height,
                 ..
             } => {
-                if let WEnum::Value(flags) = flags {
-                    if flags.contains(wl_output::Mode::Current) {
-                        output.mode = (width, height);
-                    }
+                if let WEnum::Value(flags) = flags
+                    && flags.contains(wl_output::Mode::Current)
+                {
+                    output.mode = (width, height);
                 }
             }
             wl_output::Event::Scale { factor } => output.scale = factor,

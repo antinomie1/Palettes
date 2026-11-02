@@ -189,10 +189,10 @@ impl Dispatch<WlCallback, WindowId> for State {
         _: &Connection,
         _: &QueueHandle<Self>,
     ) {
-        if let wl_callback::Event::Done { .. } = event {
-            if let Some(window) = state.window_mut(*id) {
-                window.frame_pending = false;
-            }
+        if let wl_callback::Event::Done { .. } = event
+            && let Some(window) = state.window_mut(*id)
+        {
+            window.frame_pending = false;
         }
     }
 }

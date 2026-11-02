@@ -11,20 +11,22 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+/// Watch descriptor → directory and the file names wanted in it.
+type Watched = Arc<Mutex<HashMap<i32, (PathBuf, Vec<PathBuf>)>>>;
+
 /// Reports changes to watched files. Directories are watched rather than
 /// files, so editors that replace a file on save are seen too.
 #[derive(Clone)]
 pub struct Watcher {
     fd: Arc<OwnedFd>,
-    /// Watch descriptor → directory and the file names wanted in it.
-    watched: Arc<Mutex<HashMap<i32, (PathBuf, Vec<PathBuf>)>>>,
+    watched: Watched,
 }
 
 impl Watcher {
     /// Starts the thread; `changed` runs on it with each changed file's path.
     pub fn spawn(mut changed: impl FnMut(PathBuf) + Send + 'static) -> io::Result<Self> {
         let fd = Arc::new(inotify::init(CreateFlags::CLOEXEC)?);
-        let watched: Arc<Mutex<HashMap<i32, (PathBuf, Vec<PathBuf>)>>> = Arc::default();
+        let watched: Watched = Arc::default();
         let (reader, names) = (fd.clone(), watched.clone());
         std::thread::Builder::new()
             .name("palettes-watch".into())
