@@ -13,6 +13,7 @@ repository = "https://github.com/antinomie1/Palettes"
 palettes-clock = { path = "crates/palettes-clock" }
 palettes-workspace = { path = "crates/palettes-workspace" }
 palettes-audio = { path = "crates/palettes-audio" }
+palettes-assets = { path = "crates/palettes-assets" }
 palettes-wayland = { path = "crates/palettes-wayland" }
 palettes-shell = { path = "crates/palettes-shell" }
 # One aegle for every control library (am3 uses the same source). See AGENTS.md.
