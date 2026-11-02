@@ -13,7 +13,6 @@ struct Dir {
     size: u32,
     min: u32,
     max: u32,
-    scalable: bool,
 }
 
 #[derive(Debug)]
@@ -27,7 +26,8 @@ struct Theme {
 /// Icon lookup by name or application id, cached per name and size.
 ///
 /// The theme is `PALETTES_ICON_THEME`, else the desktop's (KDE's
-/// `kdeglobals`, then GTK's `settings.ini`), else `hicolor`; parents named by
+/// `kdeglobals`, then GTK's `settings.ini`, then KDE's or GNOME's default),
+/// else `hicolor`; parents named by
 /// `Inherits` follow, and `hicolor` and `/usr/share/pixmaps` come last.
 pub struct Icons {
     theme: String,
@@ -63,6 +63,16 @@ fn desktop_theme() -> Option<String> {
                 "Settings",
                 "gtk-icon-theme-name",
             )
+        })
+        // Desktops whose default theme is implicit.
+        .or_else(|| {
+            let desktop = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
+            let default = match () {
+                _ if desktop.contains("KDE") => "breeze",
+                _ if desktop.contains("GNOME") => "Adwaita",
+                _ => return None,
+            };
+            Some(default.into())
         })
 }
 
@@ -148,7 +158,6 @@ impl Icons {
                 _ => (size.saturating_sub(threshold), size + threshold),
             };
             dirs.push(Dir {
-                scalable: kind == "Scalable",
                 path,
                 size,
                 min,
@@ -170,7 +179,6 @@ impl Icons {
             theme.bases.iter().find_map(|base| {
                 extensions
                     .iter()
-                    .filter(|e| dir.scalable || **e == "png")
                     .map(|e| base.join(&dir.path).join(format!("{name}.{e}")))
                     .find(|p| p.is_file())
             })
