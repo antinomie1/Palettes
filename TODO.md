@@ -4,7 +4,7 @@
 
 - [x] Repo, AGENTS.md, TODO.md, workspace
 - [x] `palettes-wayland`: layer surfaces, popups, outputs, seat, fractional scale, cursor shape
-- [ ] `palettes-shell`: Shell, Panel, Popup, Vulkan presentation, timers, channels
+- [x] `palettes-shell`: Shell, Surface (panels, popups), per-output panels, Vulkan presentation, channels, system theme
 - [x] `palettes-clock`: formatting and realtime ticks
 - [x] `palettes-workspace`: neutral model, Pastel IPC backend
 - [x] Pastel: `pastel-ipc` crate, IPC socket with workspace/window events and actions

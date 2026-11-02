@@ -18,10 +18,11 @@ palettes-shell = { path = "crates/palettes-shell" }
 # One aegle for every control library (am3 uses the same source). See AGENTS.md.
 aegle-platform = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-types = { git = "https://github.com/antinomie1/aegle", branch = "main" }
-aegle-ui = { git = "https://github.com/antinomie1/aegle", branch = "main" }
-aegle-widgets = { git = "https://github.com/antinomie1/aegle", branch = "main" }
-aegle-loader = { git = "https://github.com/antinomie1/aegle", branch = "main" }
-aegle-scene = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-portal = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-ui = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["system-fonts", "motion"] }
+aegle-widgets = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["motion"] }
+aegle-loader = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["motion"] }
+aegle-scene = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["text"] }
 aegle-render-vulkan = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["text", "window"] }
 raw-window-handle = "0.6.2"
 wayland-client = { version = "0.31.15", features = ["system"] }

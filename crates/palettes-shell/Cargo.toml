@@ -1,0 +1,22 @@
+[package]
+name = "palettes-shell"
+description = "The Palettes host: panels and popups with aegle UI trees, drawn with Vulkan"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+palettes-wayland.workspace = true
+aegle-platform.workspace = true
+aegle-ui.workspace = true
+aegle-scene.workspace = true
+aegle-types.workspace = true
+aegle-render-vulkan.workspace = true
+
+[dev-dependencies]
+aegle-widgets.workspace = true
+
+[lints]
+workspace = true

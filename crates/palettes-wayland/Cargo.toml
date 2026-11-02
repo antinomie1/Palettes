@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 aegle-platform.workspace = true
+aegle-portal.workspace = true
 aegle-types = { workspace = true, features = ["std"] }
 raw-window-handle.workspace = true
 rustix = { version = "1", features = ["event", "std"] }

@@ -8,7 +8,10 @@ use aegle_platform::{
 };
 use rustix::event::{EventfdFlags, PollFd, PollFlags, Timespec, eventfd, poll};
 use std::{
-    os::fd::{AsFd, OwnedFd},
+    os::{
+        fd::{AsFd, OwnedFd},
+        unix::net::UnixStream,
+    },
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -22,6 +25,9 @@ pub struct Wayland {
     queue: EventQueue<State>,
     connection: Connection,
     wake: Arc<OwnedFd>,
+    /// Appearance settings and the portal subscription that updates them.
+    preferences: Preferences,
+    portal: Option<(UnixStream, aegle_portal::Portal)>,
 }
 
 fn backend(error: impl std::fmt::Display) -> Error {
@@ -38,6 +44,21 @@ impl Wayland {
         match self.connection.flush() {
             Ok(()) | Err(WaylandError::Io(_)) => Ok(()),
             Err(error) => Err(backend(error)),
+        }
+    }
+
+    fn read_portal(&mut self) {
+        let Some((_, portal)) = self.portal.as_mut() else {
+            return;
+        };
+        let before = self.preferences;
+        if !portal.read(&mut self.preferences) {
+            self.portal = None;
+        }
+        if self.preferences != before {
+            self.state
+                .events
+                .push_back(Event::Preferences(self.preferences));
         }
     }
 
@@ -59,16 +80,20 @@ impl Platform for Wayland {
         }
         state.events.retain(|e| !matches!(e, Event::Outputs));
         let wake = eventfd(0, EventfdFlags::CLOEXEC | EventfdFlags::NONBLOCK).map_err(backend)?;
+        let mut preferences = Preferences::default();
+        let portal = aegle_portal::connect(&mut preferences);
         Ok(Self {
             state,
             queue,
             connection,
             wake: Arc::new(wake),
+            preferences,
+            portal,
         })
     }
 
     fn preferences(&self) -> Preferences {
-        Preferences::default()
+        self.preferences
     }
 
     fn wake_handle(&mut self) -> Result<WakeHandle> {
@@ -125,11 +150,17 @@ impl Platform for Wayland {
             (a, b) => a.or(b),
         };
         if let Some(guard) = self.queue.prepare_read() {
-            let (readable, woken) = {
+            let (readable, woken, portal) = {
                 let (connection, wake) = (guard.connection_fd(), self.wake.as_fd());
+                // Without a portal the wake fd stands in, so the array keeps its shape.
+                let portal = self
+                    .portal
+                    .as_ref()
+                    .map_or(wake, |(stream, _)| stream.as_fd());
                 let mut fds = [
                     PollFd::new(&connection, PollFlags::IN),
                     PollFd::new(&wake, PollFlags::IN),
+                    PollFd::new(&portal, PollFlags::IN),
                 ];
                 let timeout = timeout.map(|t| {
                     Timespec::try_from(t).unwrap_or(Timespec {
@@ -141,7 +172,8 @@ impl Platform for Wayland {
                     Ok(_) | Err(rustix::io::Errno::INTR) => {}
                     Err(error) => return Err(backend(error)),
                 }
-                (!fds[0].revents().is_empty(), !fds[1].revents().is_empty())
+                let ready = |i: usize| !fds[i].revents().is_empty();
+                (ready(0), ready(1), self.portal.is_some() && ready(2))
             };
             if readable {
                 match guard.read() {
@@ -154,6 +186,9 @@ impl Platform for Wayland {
             if woken {
                 self.drain_wake();
                 self.state.events.push_back(Event::Wake);
+            }
+            if portal {
+                self.read_portal();
             }
         }
         self.queue
