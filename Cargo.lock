@@ -1089,6 +1089,8 @@ name = "palettes-workspace"
 version = "0.1.0"
 dependencies = [
  "pastel-ipc",
+ "wayland-client",
+ "wayland-protocols",
 ]
 
 [[package]]

@@ -41,7 +41,7 @@ The facade registers `Panel` and `Icon` elements and host actions on aegle's loa
 
 ## Pastel
 
-Pastel exposes `$XDG_RUNTIME_DIR/pastel.$WAYLAND_DISPLAY.sock` (`PASTEL_SOCKET` for its children): JSON lines defined in Pastel's `pastel-ipc` crate. A subscriber receives the whole state (outputs, workspaces, windows) after each change, published from dirty frames only. `palettes-workspace` maps it to a neutral model; another compositor needs only another backend there.
+Pastel exposes `$XDG_RUNTIME_DIR/pastel.$WAYLAND_DISPLAY.sock` (`PASTEL_SOCKET` for its children): JSON lines defined in Pastel's `pastel-ipc` crate. A subscriber receives the whole state (outputs, workspaces, windows) after each change, published from dirty frames only. `palettes-workspace` maps it to a neutral model. Its second backend speaks ext-workspace-v1 to any compositor that offers it (workspaces and switching, no windows); `Compositor::connect` prefers Pastel's IPC and falls back to it.
 
 ## Audio
 

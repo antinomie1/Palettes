@@ -8,7 +8,7 @@
 //   state time_format: string          strftime pattern, "%H:%M" if empty
 //   state date: string                 local date, formatted by `date_format`
 //   state date_format: string          strftime pattern, "%a %d %b" if empty
-//   state workspaces: list<Workspace>  every workspace, by output
+//   state workspaces: list<Workspace>  every workspace, by output (Pastel IPC or ext-workspace-v1)
 //   state output_workspaces: list<Workspace>   this panel's output's workspaces
 //   state windows: list<Toplevel>       every window, by workspace
 //   state focused_title: string        the focused window's title

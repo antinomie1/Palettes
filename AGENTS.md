@@ -36,7 +36,8 @@ Dependencies only point downwards:
 ```
 crates/
   palettes-clock/      Local time, strftime formatting, next-tick deadlines. Pure.
-  palettes-workspace/  Compositor-neutral workspace/window model; Pastel IPC backend.
+  palettes-workspace/  Compositor-neutral workspace/window model; Pastel IPC and
+                       ext-workspace-v1 backends.
   palettes-audio/      PipeWire default sink/source: volume, mute. Own thread.
   palettes-assets/     Asset roots, freedesktop icon and desktop-entry lookup, fonts
                        directory, inotify watcher for hot reload. Pure.

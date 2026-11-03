@@ -7,7 +7,7 @@ A Wayland desktop shell and widget library in Rust: bars, docks, launchers, popu
 - **Markup panels**: one `.aegle` file per panel, opened on every output, reloaded in place on save
 - **Shell state by name**: declare `state time`, `state workspaces`, `state volume`… and it stays current
 - **Automatic assets**: theme icons by name or app id (SVG included), fonts from `fonts/`, paths relative to the document
-- **Services**: clock, workspaces and windows (Pastel IPC), PipeWire volume and mute, installed applications
+- **Services**: clock, workspaces and windows (Pastel IPC; workspaces also through ext-workspace-v1 on other compositors), PipeWire volume and mute, installed applications
 - **Idle means idle**: nothing runs between changes; services start only when used
 - **Composable**: any aegle control library, such as [am3](https://github.com/antinomie1/am3) (`--features am3`)
 

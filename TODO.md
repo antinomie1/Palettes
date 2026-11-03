@@ -16,8 +16,8 @@
 
 ## Later
 
-- [ ] ext-workspace-v1 backend for other compositors
-- [ ] wlr-foreign-toplevel / ext-foreign-toplevel-list window list without Pastel
+- [x] ext-workspace-v1 backend for other compositors
+- [ ] wlr-foreign-toplevel window list (focus, close) without Pastel
 - [ ] text-input-v3 (IME), clipboard and compose (dead keys) in palettes-wayland
 - [ ] Cursor without cursor-shape-v1 (cursor theme loading)
 - [ ] Services: battery (UPower via aegle-dbus), network, MPRIS, notifications server,

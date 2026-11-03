@@ -56,7 +56,7 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | `audio_device` | `string` | Default output's description |
 | `applications` | `list<App>` | Launchable applications, sorted by name |
 
-Workspaces and windows come from the compositor's IPC (Pastel). Elsewhere these states keep their defaults.
+Workspaces and windows come from Pastel's IPC. On other compositors with ext-workspace-v1 (niri, sway, …) workspaces still come, and `host.focus_workspace` still works; windows stay empty and the other compositor actions are reported as unsupported. Without either, these states keep their defaults.
 
 ## Records
 

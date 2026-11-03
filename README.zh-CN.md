@@ -7,7 +7,7 @@ Rust 编写的 Wayland 桌面 shell 与桌面小控件库：状态栏、程序�
 - **标记语言面板**：一个 `.aegle` 文件即一个面板，自动在每块屏幕上打开，保存即原地热重载
 - **按名字取 shell 状态**：声明 `state time`、`state workspaces`、`state volume`……即自动保持最新
 - **资产自动化**：按名字或 app id 查主题图标（含 SVG）、自动注册 `fonts/` 中的字体、路径相对文档解析
-- **服务**：时钟、工作区与窗口（Pastel IPC）、PipeWire 音量与静音、已安装应用
+- **服务**：时钟、工作区与窗口（Pastel IPC；其他混成器上经 ext-workspace-v1 获取工作区）、PipeWire 音量与静音、已安装应用
 - **空闲即静止**：无变化时不运行任何代码；服务在首次使用时才启动
 - **可组合**：可与任何 aegle 控件库结合，例如 [am3](https://github.com/antinomie1/am3)（`--features am3`）
 

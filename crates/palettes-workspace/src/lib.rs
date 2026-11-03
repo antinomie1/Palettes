@@ -1,11 +1,13 @@
 //! Workspaces and windows as a shell shows them, independent of the compositor.
 //!
-//! [`Compositor::connect`] finds the running compositor's IPC; today that is
-//! Pastel's socket. [`Compositor::subscribe`] delivers the whole [`Desktop`] on a
-//! background thread at once and after every change; requests such as
-//! [`Compositor::focus_workspace`] are queued to another thread and never block
-//! the caller.
+//! [`Compositor::connect`] picks the richest source the session has: Pastel's
+//! IPC (workspaces, windows, focus, any action), else the ext-workspace-v1
+//! protocol any compositor may offer (workspaces and switching; no windows).
+//! [`Compositor::subscribe`] delivers the whole [`Desktop`] on a background
+//! thread at once and after every change; requests such as
+//! [`Compositor::focus_workspace`] never block the caller.
 
+mod ext;
 mod pastel;
 
 use std::{io, sync::mpsc};
@@ -98,29 +100,85 @@ pub enum Command {
     Action(String),
 }
 
-/// The running compositor's IPC.
+/// Where workspaces and windows come from.
+enum Backend {
+    Pastel(mpsc::Sender<Command>),
+    Ext(ext::Ext),
+}
+
+/// The running compositor.
 pub struct Compositor {
-    commands: mpsc::Sender<Command>,
+    backend: Backend,
+}
+
+/// What a desktop source can do.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Source {
+    /// Pastel's IPC: workspaces, windows and every request.
+    Pastel,
+    /// ext-workspace-v1: workspaces and [`Command::FocusWorkspace`] only.
+    ExtWorkspace,
 }
 
 impl Compositor {
-    /// Connects to the compositor of this session. Fails when it has no IPC
-    /// Palettes knows.
+    /// Connects to the compositor of this session: Pastel's IPC if it is
+    /// there, else ext-workspace-v1. Fails when there is neither.
     pub fn connect() -> io::Result<Self> {
-        let commands = pastel::commands()?;
-        Ok(Self { commands })
+        let backend = match pastel::commands() {
+            Ok(commands) => Backend::Pastel(commands),
+            Err(pastel) => match ext::Ext::connect() {
+                Ok(ext) => Backend::Ext(ext),
+                Err(ext) => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::NotFound,
+                        format!("{pastel}; {ext}"),
+                    ));
+                }
+            },
+        };
+        Ok(Self { backend })
+    }
+
+    /// Connects through ext-workspace-v1 even where Pastel's IPC exists.
+    pub fn connect_ext_workspace() -> io::Result<Self> {
+        Ok(Self {
+            backend: Backend::Ext(ext::Ext::connect()?),
+        })
+    }
+
+    /// Which source this is.
+    pub fn source(&self) -> Source {
+        match self.backend {
+            Backend::Pastel(_) => Source::Pastel,
+            Backend::Ext(_) => Source::ExtWorkspace,
+        }
     }
 
     /// Calls `changed` on a background thread with the desktop now and after
     /// every change. When the compositor goes away it is called once more with
-    /// an empty desktop, and the thread ends.
+    /// an empty desktop, and the thread ends. ext-workspace-v1 allows one
+    /// subscription per connection.
     pub fn subscribe(&self, changed: impl FnMut(Desktop) + Send + 'static) -> io::Result<()> {
-        pastel::subscribe(changed)
+        match &self.backend {
+            Backend::Pastel(_) => pastel::subscribe(changed),
+            Backend::Ext(ext) => ext.subscribe(changed),
+        }
     }
 
-    /// Queues a request; failures are reported on stderr.
+    /// Sends a request; failures, and requests the source can't carry, are
+    /// reported on stderr.
     pub fn send(&self, command: Command) {
-        let _ = self.commands.send(command);
+        match (&self.backend, command) {
+            (Backend::Pastel(commands), command) => {
+                let _ = commands.send(command);
+            }
+            (Backend::Ext(ext), Command::FocusWorkspace(id)) => ext.focus_workspace(id),
+            (Backend::Ext(_), command) => {
+                eprintln!(
+                    "palettes: {command:?} needs Pastel's IPC; ext-workspace-v1 only switches workspaces"
+                );
+            }
+        }
     }
 
     /// Shows a workspace and focuses its output.
