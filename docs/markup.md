@@ -61,7 +61,7 @@ Panel {
 }
 ```
 
-`cut: true` paints a hole of the element's shape instead of its background; its border and content still draw. The hole still takes input and, with `blur`, is still blurred.
+`cut: true` paints a hole of the element's shape instead of its background; its border and content still draw. A shown hole is left out of the surface's input and blur regions, so clicks inside it reach what is below and the desktop shows through it unblurred; whatever the hole contains still draws there, but takes no input.
 
 ### Image backgrounds
 

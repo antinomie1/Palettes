@@ -35,7 +35,7 @@ New scene primitives, on every aegle renderer:
 - [x] Per-corner radius: `corners: [bottom_left, bottom_right]`; input and blur regions follow
 - [x] Inset shadow: `inset_shadow: [x, y, blur, spread, color]`
 - [x] Cut: `cut: true` punches a hole through what lies beneath
-- [ ] Input and blur regions leave out cut holes
+- [x] Input and blur regions leave out cut holes
 - [ ] Custom fragment shaders (uv, size, time, values); frames only while `time` is used  ← next
 
 Paused 2026-11-03 after the cut; everything is pushed.

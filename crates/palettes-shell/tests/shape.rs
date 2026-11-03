@@ -144,6 +144,26 @@ fn clicks_outside_rounded_corners_go_through() {
         (2, 2),
         "the middle is the top panel's again"
     );
+
+    // A cut node is a hole: the desktop shows, and clicks go, through it.
+    let hole = above.column();
+    hole.set_height(40.0);
+    hole.set_cut(true);
+    run(&shell, Duration::from_millis(300));
+    pointer.click(100, 80);
+    run(&shell, Duration::from_millis(300));
+    assert_eq!(
+        (over.get(), under.get()),
+        (2, 3),
+        "the hole is the one below's"
+    );
+    pointer.click(100, 30);
+    run(&shell, Duration::from_millis(300));
+    assert_eq!(
+        (over.get(), under.get()),
+        (3, 3),
+        "around it is the top panel's"
+    );
     below.close().unwrap();
     above.close().unwrap();
 }

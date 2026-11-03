@@ -40,20 +40,31 @@ impl Wayland {
         self.state.outputs.iter().map(|o| o.info()).collect()
     }
 
-    /// Limits pointer and touch input on a window to `rects`, in logical
-    /// surface coordinates; elsewhere events reach what is below. `None`
-    /// takes input everywhere, the default. Applies with the next frame.
-    pub fn set_input(&mut self, window: WindowId, rects: Option<&[PixelRect]>) -> Result<()> {
-        self.state.set_input(window, rects)?;
+    /// Limits pointer and touch input on a window to `rects` less `holes`,
+    /// in logical surface coordinates; elsewhere events reach what is below.
+    /// `None` takes input everywhere, the default. Applies with the next frame.
+    pub fn set_input(
+        &mut self,
+        window: WindowId,
+        rects: Option<&[PixelRect]>,
+        holes: &[PixelRect],
+    ) -> Result<()> {
+        self.state.set_input(window, rects, holes)?;
         self.flush()
     }
 
-    /// Has the compositor blur what lies behind `rects` of a window, in
-    /// logical surface coordinates (see [`rounded_rects`](crate::rounded_rects));
-    /// empty removes the blur. Applies with the window's next frame. A
-    /// compositor without ext-background-effect-v1 ignores it.
-    pub fn set_blur(&mut self, window: WindowId, rects: &[PixelRect]) -> Result<()> {
-        self.state.set_blur(window, rects)?;
+    /// Has the compositor blur what lies behind `rects` less `holes` of a
+    /// window, in logical surface coordinates (see
+    /// [`rounded_rects`](crate::rounded_rects)); empty `rects` remove the
+    /// blur. Applies with the window's next frame. A compositor without
+    /// ext-background-effect-v1 ignores it.
+    pub fn set_blur(
+        &mut self,
+        window: WindowId,
+        rects: &[PixelRect],
+        holes: &[PixelRect],
+    ) -> Result<()> {
+        self.state.set_blur(window, rects, holes)?;
         self.flush()
     }
 

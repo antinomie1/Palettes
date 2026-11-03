@@ -75,18 +75,27 @@ pub fn rounded_rects(rect: Rect, radii: [f32; 4], out: &mut Vec<PixelRect>) {
 }
 
 impl State {
-    fn region(&self, rects: &[PixelRect]) -> WlRegion {
+    fn region(&self, rects: &[PixelRect], holes: &[PixelRect]) -> WlRegion {
         let region = self.globals.compositor.create_region(&self.qh, ());
         for r in rects {
             region.add(r.x as i32, r.y as i32, r.width as i32, r.height as i32);
         }
+        for r in holes {
+            region.subtract(r.x as i32, r.y as i32, r.width as i32, r.height as i32);
+        }
         region
     }
 
-    /// Sets where a window takes pointer and touch input; `None` for all of
-    /// it. Takes effect with the window's next commit.
-    pub fn set_input(&mut self, id: WindowId, rects: Option<&[PixelRect]>) -> Result<()> {
-        let region = rects.map(|rects| self.region(rects));
+    /// Sets where a window takes pointer and touch input: `rects` without
+    /// `holes`, or with `None` all of it. Takes effect with the window's
+    /// next commit.
+    pub fn set_input(
+        &mut self,
+        id: WindowId,
+        rects: Option<&[PixelRect]>,
+        holes: &[PixelRect],
+    ) -> Result<()> {
+        let region = rects.map(|rects| self.region(rects, holes));
         let window = self.window(id).ok_or(Error::InvalidWindow)?;
         window.surface.set_input_region(region.as_ref());
         if let Some(region) = region {
@@ -95,15 +104,21 @@ impl State {
         Ok(())
     }
 
-    /// Sets the blur region of a window; empty removes it. Takes effect with
-    /// the window's next commit. Without the protocol, nothing happens.
-    pub fn set_blur(&mut self, id: WindowId, rects: &[PixelRect]) -> Result<()> {
+    /// Sets the blur region of a window, `rects` without `holes`; empty
+    /// `rects` remove it. Takes effect with the window's next commit.
+    /// Without the protocol, nothing happens.
+    pub fn set_blur(
+        &mut self,
+        id: WindowId,
+        rects: &[PixelRect],
+        holes: &[PixelRect],
+    ) -> Result<()> {
         let qh = self.qh.clone();
         let Some(manager) = self.globals.background_effect.clone() else {
             self.window(id).ok_or(Error::InvalidWindow)?;
             return Ok(());
         };
-        let region = (!rects.is_empty()).then(|| self.region(rects));
+        let region = (!rects.is_empty()).then(|| self.region(rects, holes));
         let window = self.window_mut(id).ok_or(Error::InvalidWindow)?;
         if rects.is_empty() && window.effect.is_none() {
             return Ok(());
