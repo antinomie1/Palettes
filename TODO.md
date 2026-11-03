@@ -28,7 +28,7 @@ Markup exposure of what aegle already draws or animates (aegle-loader, aegle-mar
 - [x] Repeating and alternating animations
 - [x] Shapes: `Shape` (SVG path data) and `Arc`; fill, stroke, caps
 - [x] Image backgrounds: `Image { fit: cover; inset: 0dp }`, resolved like assets, shrunk to fit a surface
-- [ ] Reload images and icons when their files change
+- [x] Reload images and icons when their files change
 
 New scene primitives, on every aegle renderer:
 

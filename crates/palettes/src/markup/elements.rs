@@ -1,6 +1,6 @@
 //! Palettes' markup elements: `Panel`, the root of a panel document,
 //! `Icon`, an icon by theme name, and `Image`, which replaces aegle's to
-//! resolve its source like every other asset.
+//! resolve its source like every other asset and follow its file.
 
 use aegle_loader::{Elements, element};
 use aegle_ui::{ColorSlot, Container, Node, NodeId, Theme};
@@ -215,10 +215,11 @@ fn keyboard(name: &str) -> KeyboardInteractivity {
 }
 
 /// Shows the icon `name`: a theme icon or application id (`firefox`,
-/// `audio-volume-high`), or a path, relative to the asset roots. Empty clears it.
+/// `audio-volume-high`), or a path, relative to the asset roots. Empty clears
+/// it; a change to its file shows the new one.
 fn show_icon(view: &ImageView, name: &str) {
     if name.is_empty() {
-        view.clear();
+        crate::markup::image::clear(view);
         return;
     }
     let looks_like_path = name.contains('/') || name.ends_with(".png") || name.ends_with(".svg");
@@ -230,25 +231,26 @@ fn show_icon(view: &ImageView, name: &str) {
     };
     match found {
         Some(path) => {
-            if let Err(e) = crate::markup::image::load(view, &path) {
+            if let Err(e) = crate::markup::image::show(view, &path) {
                 eprintln!("palettes: icon {}: {e}", path.display());
             }
         }
-        None => view.clear(),
+        None => crate::markup::image::clear(view),
     }
 }
 
 /// Shows the image at `source`, relative to the asset roots; empty clears it.
-/// A failure reaches the element's `failed` event.
+/// A failure reaches the element's `failed` event; a change to the file shows
+/// the new one.
 fn show_image(view: &ImageView, source: &str) {
     if source.is_empty() {
-        view.clear();
+        crate::markup::image::clear(view);
         return;
     }
     let path = crate::markup::roots()
         .resolve(source)
         .unwrap_or_else(|| source.into());
-    let _ = crate::markup::image::load(view, &path);
+    let _ = crate::markup::image::show(view, &path);
 }
 
 fn fit(name: &str) -> Fit {

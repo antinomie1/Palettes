@@ -1,10 +1,38 @@
 //! Image files for `Image` and `Icon`: bitmaps, SVGs rasterized at icon
 //! size, and bitmaps larger than [`palettes_shell::MAX_IMAGE_PIXELS`]
-//! shrunk once, since a surface could not upload them.
+//! shrunk once, since a surface could not upload them. A view shows its file
+//! again when the file changes.
 
+use super::follow::Followers;
 use aegle_ui::scene::Image;
 use aegle_widgets::ImageView;
 use std::path::Path;
+
+thread_local! {
+    static SHOWN: Followers<ImageView> = const { Followers::new() };
+}
+
+/// Shows the file at `path` in `view` and keeps it shown when the file
+/// changes. Failures reach the view's error handlers.
+pub(crate) fn show(view: &ImageView, path: &Path) -> aegle_ui::Result<()> {
+    let path = SHOWN.with(|shown| shown.follow(view, path));
+    load(view, &path)
+}
+
+/// Empties `view` and stops following its file.
+pub(crate) fn clear(view: &ImageView) {
+    SHOWN.with(|shown| shown.forget(view));
+    view.clear();
+}
+
+/// Loads `path` again into every view showing it.
+pub(crate) fn changed(path: &Path) {
+    for view in SHOWN.with(|shown| shown.of(path)) {
+        if let Err(e) = load(&view, path) {
+            eprintln!("palettes: image {}: {e}", path.display());
+        }
+    }
+}
 
 /// Icon size in pixels SVG icons are rasterized at: crisp up to 32 dp at 2×.
 #[cfg(feature = "svg")]
@@ -12,7 +40,7 @@ const ICON_PIXELS: u32 = 64;
 
 /// Loads a bitmap, or rasterizes an SVG, into `view`. Failures reach the
 /// view's error handlers.
-pub(crate) fn load(view: &ImageView, path: &Path) -> aegle_ui::Result<()> {
+fn load(view: &ImageView, path: &Path) -> aegle_ui::Result<()> {
     #[cfg(feature = "svg")]
     if path.extension().is_some_and(|e| e == "svg") {
         let bytes = std::fs::read(path)?;

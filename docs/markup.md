@@ -94,7 +94,7 @@ Text { text: time; opacity_animation: [[0.5, 1], 800ms, ease_in_out, alternate] 
 
 ## Image
 
-`Image { source: "wall.png"; fit: cover }`. `source` resolves like other assets; `fit` is `fill`, `contain` or `cover`. Images larger than one megapixel are shrunk once when loaded, so a surface can upload them. `on failed` runs when a file does not load, with `self.error`.
+`Image { source: "wall.png"; fit: cover }`. `source` resolves like other assets; `fit` is `fill`, `contain` or `cover`. Images larger than one megapixel are shrunk once when loaded, so a surface can upload them. Saving the file, or replacing it, shows the new image; icons follow their files the same way. `on failed` runs when a file does not load, with `self.error`.
 
 ## Icon
 

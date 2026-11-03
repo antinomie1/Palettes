@@ -37,7 +37,7 @@ Services keep the latest value and a list of followers, each owned by a control.
 
 ## Markup
 
-The facade registers `Panel` and `Icon` elements and host actions on aegle's loader. Opening a document first builds it into a throwaway tree to read its `Panel` placement, then opens a surface per wanted output and builds it there. Shell states are matched by name; records come from the embedded prelude served for `use "palettes.aegle"`. A reload rebuilds each view in place (`View::reload`), re-attaches states, and moves surfaces to the new placement.
+The facade registers `Panel` and `Icon` elements and host actions on aegle's loader. Opening a document first builds it into a throwaway tree to read its `Panel` placement, then opens a surface per wanted output and builds it there. Shell states are matched by name; records come from the embedded prelude served for `use "palettes.aegle"`. A reload rebuilds each view in place (`View::reload`), re-attaches states, and moves surfaces to the new placement. Images and icons watch their own files: a change loads the file again into every view showing it, without rebuilding the document.
 
 ## Pastel
 

@@ -5,10 +5,12 @@
 //! Imports resolve against the importing file; `use "palettes.aegle"` gets
 //! the embedded prelude unless such a file exists. Relative image paths
 //! resolve against the first document's directory, and fonts in any asset
-//! root's `fonts/` are registered at start.
+//! root's `fonts/` are registered at start. Images and icons show their
+//! files again when those change.
 
 mod actions;
 pub mod elements;
+mod follow;
 pub mod image;
 pub mod states;
 
@@ -43,11 +45,24 @@ struct Runner {
     elements: Elements,
     roots: Roots,
     documents: Vec<Document>,
-    watcher: Option<Watcher>,
 }
 
 thread_local! {
     static RUNNER: RefCell<Option<Runner>> = const { RefCell::new(None) };
+    /// Outside the runner, since views loading images while the runner
+    /// builds them watch their files too.
+    static WATCHER: RefCell<Option<Watcher>> = const { RefCell::new(None) };
+}
+
+/// Reports changes to `path` from now on, if hot reload runs.
+pub(crate) fn watch(path: &Path) {
+    WATCHER.with_borrow(|watcher| {
+        if let Some(watcher) = watcher
+            && let Err(e) = watcher.watch(path)
+        {
+            eprintln!("palettes: not watching {}: {e}", path.display());
+        }
+    });
 }
 
 /// The asset roots of the first document.
@@ -190,20 +205,10 @@ fn with_runner<T>(f: impl FnOnce(&mut Runner) -> Result<T>) -> Result<T> {
     result
 }
 
-fn watch(runner: &Runner, files: &[PathBuf]) {
-    if let Some(watcher) = &runner.watcher {
-        for file in files {
-            if let Err(e) = watcher.watch(file) {
-                eprintln!("palettes: not watching {}: {e}", file.display());
-            }
-        }
-    }
-}
-
 fn open_document(runner: &mut Runner, path: &Path) -> Result<()> {
     let path = std::fs::canonicalize(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let (program, sources, files) = load(&path, &runner.elements)?;
-    watch(runner, &files);
+    files.iter().for_each(|file| watch(file));
     let mut document = Document {
         path,
         program,
@@ -217,6 +222,7 @@ fn open_document(runner: &mut Runner, path: &Path) -> Result<()> {
 }
 
 fn changed(path: &Path) -> Result<()> {
+    image::changed(path);
     with_runner(|runner| {
         let Runner {
             shell,
@@ -232,12 +238,11 @@ fn changed(path: &Path) -> Result<()> {
                 eprintln!("palettes: keeping {}: {e}", document.path.display());
             }
         }
-        let files: Vec<PathBuf> = runner
-            .documents
+        // Imports may have changed.
+        documents
             .iter()
-            .flat_map(|d| d.files.clone())
-            .collect();
-        watch(runner, &files);
+            .flat_map(|d| &d.files)
+            .for_each(|file| watch(file));
         Ok(())
     })
 }
@@ -311,6 +316,7 @@ impl Documents {
         let watcher = Watcher::spawn(move |path| reloads.send(path))
             .inspect_err(|e| eprintln!("palettes: no hot reload: {e}"))
             .ok();
+        WATCHER.with_borrow_mut(|slot| *slot = watcher);
         let resync = shell.clone();
         shell.on_outputs(move |_| {
             with_runner(|runner| {
@@ -325,7 +331,6 @@ impl Documents {
             elements,
             roots: Roots::new(None),
             documents: Vec::new(),
-            watcher,
         };
         RUNNER.with_borrow_mut(|slot| *slot = Some(runner));
         Ok(Self { shell })
