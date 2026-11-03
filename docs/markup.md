@@ -51,6 +51,39 @@ Panel {
 
 Input follows the same shape: clicks around a rounded panel's corners reach what is below. `blur` follows the panel's bounds, `radius` and visibility. It needs a compositor with ext-background-effect-v1 (KWin 6, Pastel with `blur` on); elsewhere the panel is only translucent. Pastel blurs the wallpaper and layers below a panel, not windows, when `blur-xray` is on. `backdrop_blur` on a control blurs what the panel itself draws beneath that control. `shadow` draws inside the surface, so give it room with `padding`. See `examples/glass.aegle`.
 
+### Image backgrounds
+
+An `Image` with `inset: 0dp` leaves the layout and fills the panel; `fit: cover` crops it to the panel's shape when it has the same `radius`:
+
+```text
+Panel {
+    radius: 20dp
+    Image { source: "wall.png"; fit: cover; inset: 0dp; radius: 20dp }
+    Row { Text { text: "on the picture" } }
+}
+```
+
+### Shapes and motion
+
+```text
+Stack {                                     // children overlap in one cell
+    Arc { width: 32dp; height: 32dp; stroke: #45475a; stroke_width: 4dp }
+    Arc { width: 32dp; height: 32dp; sweep: volume * 360.0; stroke: #89b4fa
+          stroke_width: 4dp; cap: round }
+}
+Shape { width: 16dp; height: 16dp; path: "M 2 8 L 6 12 L 14 4"; stroke: #a6e3a1; stroke_width: 2dp }
+Icon { name: "view-refresh"; rotation_animation: [[0, 360], 1000ms, linear, forever] }
+Text { text: time; opacity_animation: [[0.5, 1], 800ms, ease_in_out, alternate] }
+```
+
+- `Shape` draws SVG path data in dp from its top-left corner; `Arc` draws `sweep` degrees from `start`, clockwise from the top, on the largest circle that fits. Both take `fill`, `stroke`, `stroke_width` and `cap` (`butt`, `round`, `square`) and have no size of their own.
+- `scale_animation`, `rotation_animation` and `opacity_animation` take `[[values...], duration]`, optionally an easing, then `forever` or `alternate`. They start when the element is built; a running one keeps the panel drawing every frame, and nothing else does.
+- Every `*_transition` takes a duration, `[duration, easing]` or `spring(stiffness, damping)`; an easing is `linear`, `ease_in`, `ease_out`, `ease_in_out`, `cubic_bezier(x1, y1, x2, y2)` or a spring.
+
+## Image
+
+`Image { source: "wall.png"; fit: cover }`. `source` resolves like other assets; `fit` is `fill`, `contain` or `cover`. Images larger than one megapixel are shrunk once when loaded, so a surface can upload them. `on failed` runs when a file does not load, with `self.error`.
+
 ## Icon
 
 `Icon { name: "audio-volume-high"; size: 16dp }`. `name` is a theme icon name, an application id (`firefox`, `org.kde.dolphin`) or a path. Names resolve through the user's icon theme (`PALETTES_ICON_THEME`, KDE or GTK settings), its parents and `hicolor`; app ids through installed desktop entries. Paths resolve like other assets. SVG icons are rasterized. Icon paths in records (`Toplevel.icon`, `App.icon`) can be passed to `name` as they are.

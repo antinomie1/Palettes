@@ -15,6 +15,13 @@ use aegle_ui::{
 use palettes_wayland::{Wayland, WindowSurface};
 use std::{cell::RefCell, rc::Rc, time::Instant};
 
+/// Pixels of the largest image a surface uploads: 4 MiB of RGBA, which the
+/// default memory budget holds beside the surface's text.
+pub const MAX_IMAGE_PIXELS: u32 = 1024 * 1024;
+
+/// One such image plus aegle's default 1 MiB for the frame's glyphs.
+const UPLOAD_BYTES: usize = MAX_IMAGE_PIXELS as usize * 4 + 1024 * 1024;
+
 pub(crate) struct Entry {
     pub id: WindowId,
     pub ui: Rc<Ui>,
@@ -131,6 +138,10 @@ impl Runtime {
             memory_budget: self.options.memory_budget,
             // Shell surfaces are often translucent or rounded.
             transparent: true,
+            text: aegle_render_vulkan::TextOptions {
+                upload_bytes: UPLOAD_BYTES,
+                ..Default::default()
+            },
             ..Default::default()
         };
         // SAFETY: the lease keeps the wl_surface and display alive, and the

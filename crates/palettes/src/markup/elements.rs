@@ -1,9 +1,10 @@
-//! Palettes' markup elements: `Panel`, the root of a panel document, and
-//! `Icon`, an icon by theme name.
+//! Palettes' markup elements: `Panel`, the root of a panel document,
+//! `Icon`, an icon by theme name, and `Image`, which replaces aegle's to
+//! resolve its source like every other asset.
 
 use aegle_loader::{Elements, element};
 use aegle_ui::{ColorSlot, Container, Node, NodeId, Theme};
-use aegle_widgets::{ImageView, Widgets};
+use aegle_widgets::{Fit, ImageView, Widgets};
 use palettes_shell::{KeyboardInteractivity, Layer, PanelOptions, Surface};
 use std::{cell::RefCell, collections::HashMap};
 
@@ -229,7 +230,7 @@ fn show_icon(view: &ImageView, name: &str) {
     };
     match found {
         Some(path) => {
-            if let Err(e) = load(view, &path) {
+            if let Err(e) = crate::markup::image::load(view, &path) {
                 eprintln!("palettes: icon {}: {e}", path.display());
             }
         }
@@ -237,19 +238,26 @@ fn show_icon(view: &ImageView, name: &str) {
     }
 }
 
-/// Icon size in pixels SVG icons are rasterized at: crisp up to 32 dp at 2×.
-const ICON_PIXELS: u32 = 64;
-
-/// Loads a bitmap, or rasterizes an SVG, into `view`.
-fn load(view: &ImageView, path: &std::path::Path) -> aegle_ui::Result<()> {
-    #[cfg(feature = "svg")]
-    if path.extension().is_some_and(|e| e == "svg") {
-        let bytes = std::fs::read(path)?;
-        let image = aegle_image::svg::rasterize(&bytes, ICON_PIXELS, ICON_PIXELS)?;
-        view.set_image(&image);
-        return Ok(());
+/// Shows the image at `source`, relative to the asset roots; empty clears it.
+/// A failure reaches the element's `failed` event.
+fn show_image(view: &ImageView, source: &str) {
+    if source.is_empty() {
+        view.clear();
+        return;
     }
-    view.load(path)
+    let path = crate::markup::roots()
+        .resolve(source)
+        .unwrap_or_else(|| source.into());
+    let _ = crate::markup::image::load(view, &path);
+}
+
+fn fit(name: &str) -> Fit {
+    match name {
+        "fill" => Fit::Fill,
+        "contain" => Fit::Contain,
+        "cover" => Fit::Cover,
+        other => unreachable!("checked fit `{other}`"),
+    }
 }
 
 fn icon_view(parent: &Container) -> ImageView {
@@ -281,6 +289,15 @@ element! {
         set name: line => show_icon;
         set size: length => |view, size| { view.set_width(size); view.set_height(size) };
     }
+    /// An image file relative to the asset roots, placed by `fit`. In a
+    /// `Stack` with `fit: cover` and a `radius`, it is a rounded background.
+    pub Image(ImageView) {
+        create |parent| parent.image_view();
+        set source: line => show_image;
+        set fit: choice(fill, contain, cover) => |view, name| view.set_fit(fit(name));
+        event failed => |view, run| view.on_error(move |_| run());
+        get error: string => |view| view.error().unwrap_or_default();
+    }
 }
 
 /// Aegle's built-in elements and Palettes' own, plus am3's `Md*` elements
@@ -290,5 +307,5 @@ pub fn elements() -> Elements {
     let base = am3::elements();
     #[cfg(not(feature = "am3"))]
     let base = Elements::new();
-    base.with::<Panel>().with::<Icon>()
+    base.with::<Panel>().with::<Icon>().with::<Image>()
 }

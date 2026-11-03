@@ -1,0 +1,32 @@
+// Shapes and motion: a volume ring, a check mark and a breathing clock.
+// `cargo run -p palettes -- examples/rings.aegle`
+use "palettes.aegle"
+
+Panel {
+    edge: top
+    size: 48dp
+    span: 360dp
+    offset: 8dp
+    radius: 24dp
+    background: #1e1e2e
+    padding: [0dp, 16dp]
+
+    state volume: float = 0.0
+    state muted: bool = false
+    state time: string = ""
+
+    Row {
+        grow: 1
+        gap: 12dp
+        align: center
+        Stack {
+            Arc { width: 28dp; height: 28dp; stroke: #45475a; stroke_width: 4dp }
+            Arc { width: 28dp; height: 28dp; sweep: volume * 360.0; stroke: #89b4fa
+                  stroke_width: 4dp; cap: round }
+        }
+        Shape { width: 16dp; height: 16dp; path: "M 2 8 L 6 12 L 14 4"; stroke: #a6e3a1
+                stroke_width: 2dp; cap: round; visible: !muted }
+        Text { text: time; grow: 1; foreground: #cdd6f4
+               opacity_animation: [[0.6, 1], 1600ms, ease_in_out, alternate] }
+    }
+}

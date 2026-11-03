@@ -9,6 +9,7 @@
 
 mod actions;
 pub mod elements;
+pub mod image;
 pub mod states;
 
 use aegle_loader::{Elements, Program, View};

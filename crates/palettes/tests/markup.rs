@@ -34,6 +34,36 @@ fn panels_take_visual_effects() {
 }
 
 #[test]
+fn panels_take_shapes_animations_and_image_backgrounds() {
+    let fx = document(
+        "fx.aegle",
+        r#"use "palettes.aegle"
+Panel {
+    state level: float = 0.5
+    radius: 12dp
+    Image { source: "wallpaper.png"; fit: cover; inset: 0dp; radius: 12dp }
+    Row {
+        Stack {
+            Arc { width: 24dp; height: 24dp; stroke: #45475a; stroke_width: 3dp }
+            Arc { width: 24dp; height: 24dp; sweep: level * 360.0; stroke: #89b4fa
+                  stroke_width: 3dp; cap: round }
+        }
+        Shape { width: 16dp; height: 16dp; path: "M 2 8 L 6 12 L 14 4"; stroke: #ffffff }
+        Text { text: "busy"; rotation_animation: [[0, 360], 1000ms, linear, forever]
+               scale_transition: spring(300, 10) }
+    }
+}
+"#,
+    );
+    markup::check(&fx).unwrap();
+    let bad = document(
+        "bad-fx.aegle",
+        "Panel { Image { source: \"a.png\"; fit: tile } }",
+    );
+    assert!(markup::check(&bad).is_err());
+}
+
+#[test]
 fn checking_reports_mistakes_with_their_place() {
     let bad = document(
         "bad.aegle",

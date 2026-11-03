@@ -23,5 +23,6 @@ pub use aegle_ui as ui;
 pub use aegle_ui::Result;
 pub use channel::Sender;
 pub use options::{PanelOptions, PopupOptions, ShellOptions};
+pub use runtime::MAX_IMAGE_PIXELS;
 pub use shell::Shell;
 pub use surface::Surface;
