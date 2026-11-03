@@ -11,11 +11,13 @@ use wayland_protocols::ext::background_effect::v1::client::{
     ext_background_effect_surface_v1::ExtBackgroundEffectSurfaceV1,
 };
 
-/// Appends rectangles covering `rect` with corners of `radius`, all in
-/// whole logical pixels: one per row of a corner whose inset changes, and
-/// one for the straight middle. Edges round to the nearest pixel, so the
-/// region stays inside what a renderer would draw.
-pub fn rounded_rects(rect: Rect, radius: f32, out: &mut Vec<PixelRect>) {
+/// Appends rectangles covering `rect` with top-left, top-right, bottom-right
+/// and bottom-left corners of `radii`, all in whole logical pixels: one per
+/// run of rows with the same insets, so a corner row whose inset changes
+/// starts a rectangle and the straight middle is one. Radii shrink like
+/// aegle's, and edges round to the nearest pixel, so the region stays
+/// inside what a renderer would draw.
+pub fn rounded_rects(rect: Rect, radii: [f32; 4], out: &mut Vec<PixelRect>) {
     let left = rect.origin.x.max(0.0).round();
     let top = rect.origin.y.max(0.0).round();
     let right = (rect.origin.x + rect.size.width).round();
@@ -24,33 +26,52 @@ pub fn rounded_rects(rect: Rect, radius: f32, out: &mut Vec<PixelRect>) {
         return;
     }
     let (width, height) = (right - left, bottom - top);
-    let radius = radius.max(0.0).min(width / 2.0).min(height / 2.0);
-    let rows = radius.ceil() as u32;
-    let mut push = |x: f32, y: f32, w: f32, h: f32| {
-        if w > 0.0 && h > 0.0 {
-            out.push(PixelRect {
-                x: x as u32,
-                y: y as u32,
-                width: w as u32,
-                height: h as u32,
-            });
+    let [top_left, top_right, bottom_right, bottom_left] = radii.map(|r| r.max(0.0));
+    // Where two corners of a side would overlap, every radius shrinks alike.
+    let factor = [
+        (width, top_left + top_right),
+        (width, bottom_left + bottom_right),
+        (height, top_left + bottom_left),
+        (height, top_right + bottom_right),
+    ]
+    .iter()
+    .filter(|(_, sum)| *sum > 0.0)
+    .fold(1.0f32, |factor, (length, sum)| factor.min(length / sum));
+    // The inset of pixel row `row` counted from the edge a corner of `radius`
+    // touches, zero below the corner.
+    let inset = |radius: f32, row: f32| {
+        let radius = radius * factor;
+        if row >= radius.ceil() {
+            return 0.0;
         }
-    };
-    // Insets of each corner row, from the outer edge inwards, merged into runs.
-    let inset = |row: u32| {
-        let dy = radius - (row as f32 + 0.5);
+        let dy = radius - (row + 0.5);
         (radius - (radius * radius - dy * dy).max(0.0).sqrt()).round()
     };
-    let mut row = 0;
-    while row < rows {
-        let x = inset(row);
-        let run = (row..rows).take_while(|&r| inset(r) == x).count() as u32;
-        let (w, h) = (width - 2.0 * x, run as f32);
-        push(left + x, top + row as f32, w, h);
-        push(left + x, bottom - (row + run) as f32, w, h);
-        row += run;
+    let insets = |y: f32| {
+        let from_bottom = height - 1.0 - y;
+        (
+            inset(top_left, y).max(inset(bottom_left, from_bottom)),
+            inset(top_right, y).max(inset(bottom_right, from_bottom)),
+        )
+    };
+    let mut y = 0.0;
+    while y < height {
+        let (start, end) = insets(y);
+        let mut run = 1.0;
+        while y + run < height && insets(y + run) == (start, end) {
+            run += 1.0;
+        }
+        let w = width - start - end;
+        if w > 0.0 {
+            out.push(PixelRect {
+                x: (left + start) as u32,
+                y: (top + y) as u32,
+                width: w as u32,
+                height: run as u32,
+            });
+        }
+        y += run;
     }
-    push(left, top + rows as f32, width, height - 2.0 * rows as f32);
 }
 
 impl State {

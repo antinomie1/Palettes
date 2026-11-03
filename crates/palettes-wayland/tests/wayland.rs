@@ -97,7 +97,7 @@ fn a_panel_and_its_popup_are_configured() {
     ));
     // Regions: set, replaced and removed without protocol errors.
     let mut rects = Vec::new();
-    palettes_wayland::rounded_rects(Rect::new(0.0, 0.0, 80.0, 40.0), 8.0, &mut rects);
+    palettes_wayland::rounded_rects(Rect::new(0.0, 0.0, 80.0, 40.0), [8.0; 4], &mut rects);
     wayland.set_blur(popup, &rects).unwrap();
     wayland.set_blur(popup, &rects[..1]).unwrap();
     wayland.set_blur(panel, &[]).unwrap();

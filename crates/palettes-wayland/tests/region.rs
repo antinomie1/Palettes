@@ -13,7 +13,7 @@ fn covered(rects: &[PixelRect], x: u32, y: u32) -> bool {
 #[test]
 fn a_square_corner_is_one_rectangle() {
     let mut rects = Vec::new();
-    rounded_rects(Rect::new(4.0, 2.0, 100.0, 30.0), 0.0, &mut rects);
+    rounded_rects(Rect::new(4.0, 2.0, 100.0, 30.0), [0.0; 4], &mut rects);
     assert_eq!(
         rects,
         [PixelRect {
@@ -28,7 +28,7 @@ fn a_square_corner_is_one_rectangle() {
 #[test]
 fn rounded_corners_leave_their_corners_out() {
     let mut rects = Vec::new();
-    rounded_rects(Rect::new(0.0, 0.0, 200.0, 40.0), 12.0, &mut rects);
+    rounded_rects(Rect::new(0.0, 0.0, 200.0, 40.0), [12.0; 4], &mut rects);
     assert!(
         !covered(&rects, 0, 0) && !covered(&rects, 199, 39),
         "corners"
@@ -52,10 +52,33 @@ fn rounded_corners_leave_their_corners_out() {
 #[test]
 fn a_pill_rounds_its_whole_ends_and_nothing_is_empty() {
     let mut rects = Vec::new();
-    rounded_rects(Rect::new(10.0, 10.0, 80.0, 24.0), 100.0, &mut rects);
+    rounded_rects(Rect::new(10.0, 10.0, 80.0, 24.0), [100.0; 4], &mut rects);
     assert!(rects.iter().all(|r| r.width > 0 && r.height > 0));
     assert!(covered(&rects, 10, 22) && !covered(&rects, 10, 10));
     rects.clear();
-    rounded_rects(Rect::new(0.0, 0.0, 0.0, 24.0), 4.0, &mut rects);
+    rounded_rects(Rect::new(0.0, 0.0, 0.0, 24.0), [4.0; 4], &mut rects);
     assert!(rects.is_empty());
+}
+
+#[test]
+fn only_the_rounded_corners_are_left_out() {
+    // A bar along the top: square top corners, round bottom ones.
+    let mut rects = Vec::new();
+    rounded_rects(
+        Rect::new(0.0, 0.0, 200.0, 40.0),
+        [0.0, 0.0, 12.0, 12.0],
+        &mut rects,
+    );
+    assert!(
+        covered(&rects, 0, 0) && covered(&rects, 199, 0),
+        "square top"
+    );
+    assert!(
+        !covered(&rects, 0, 39) && !covered(&rects, 199, 39),
+        "round bottom"
+    );
+    assert!(covered(&rects, 0, 27) && covered(&rects, 100, 39));
+    let area: u32 = rects.iter().map(|r| r.width * r.height).sum();
+    let exact = 200.0 * 40.0 - (4.0 - std::f32::consts::PI) * 72.0;
+    assert!((area as f32 - exact).abs() < 20.0, "{area} vs {exact}");
 }

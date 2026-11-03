@@ -29,7 +29,8 @@ pub(crate) fn toggle(nodes: &mut Vec<Node>, node: &Node, on: bool) {
 fn region(nodes: &[Node]) -> Vec<PixelRect> {
     let mut rects = Vec::new();
     for node in nodes.iter().filter(|n| n.is_visible() && n.opacity() > 0.0) {
-        rounded_rects(node.bounds(), node.appearance().radius, &mut rects);
+        let radii = node.corners().radii(node.appearance().radius);
+        rounded_rects(node.bounds(), radii, &mut rects);
     }
     rects
 }
