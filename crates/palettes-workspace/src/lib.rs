@@ -60,6 +60,9 @@ pub struct Window {
     pub title: String,
     /// Application id, which names its desktop entry and icon.
     pub app_id: String,
+    /// The icon name the window set itself, empty without one; for windows
+    /// whose app id names no desktop entry.
+    pub icon: String,
     /// The workspace it is on.
     pub workspace: u64,
     /// It has the keyboard.

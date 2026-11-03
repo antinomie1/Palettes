@@ -36,6 +36,7 @@ fn state() -> pastel_ipc::State {
             id: 9,
             title: "htop".into(),
             app_id: "foot".into(),
+            icon: "utilities-terminal".into(),
             workspace: 3,
             focused: true,
             floating: false,
@@ -83,6 +84,7 @@ fn follows_and_drives_pastel() {
         .unwrap();
     let desktop: Desktop = seen.recv_timeout(Duration::from_secs(2)).unwrap();
     assert_eq!(desktop.focused_window().unwrap().title, "htop");
+    assert_eq!(desktop.focused_window().unwrap().icon, "utilities-terminal");
     assert_eq!(desktop.focused_workspace().unwrap().name, "1");
     assert_eq!(desktop.workspaces_on("DP-1").count(), 2);
     // Hanging up ends with an empty desktop.

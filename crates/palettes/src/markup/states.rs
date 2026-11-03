@@ -38,9 +38,12 @@ fn workspace(w: &palettes_workspace::Workspace) -> Data {
     ])
 }
 
-fn icon_of(app_id: &str) -> String {
-    services::icons()
-        .for_app(app_id, 64)
+/// A window's icon file: its desktop entry's, else the icon it named itself.
+fn icon_of(window: &palettes_workspace::Window) -> String {
+    let icons = services::icons();
+    icons
+        .for_app(&window.app_id, 64)
+        .or_else(|| icons.lookup(&window.icon, 64))
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_default()
 }
@@ -50,7 +53,7 @@ fn window(w: &palettes_workspace::Window) -> Data {
         Data::Int(w.id as i64),
         string(&w.title),
         string(&w.app_id),
-        string(&icon_of(&w.app_id)),
+        string(&icon_of(w)),
         Data::Int(w.workspace as i64),
         Data::Bool(w.focused),
     ])
@@ -106,7 +109,7 @@ fn desktop(view: &View, output: &str, desktop: &Desktop) {
     set(view, "focused_title", string(&field(|w| w.title.clone())));
     set(view, "focused_app", string(&field(|w| w.app_id.clone())));
     if view.get("focused_icon").is_some() {
-        set(view, "focused_icon", string(&field(|w| icon_of(&w.app_id))));
+        set(view, "focused_icon", string(&field(icon_of)));
     }
 }
 

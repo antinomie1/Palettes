@@ -46,6 +46,7 @@ pub fn desktop(state: pastel_ipc::State) -> Desktop {
                 id: w.id,
                 title: w.title,
                 app_id: w.app_id,
+                icon: w.icon,
                 workspace: w.workspace,
                 focused: w.focused,
                 floating: w.floating,
