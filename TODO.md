@@ -20,7 +20,6 @@
 - [ ] wlr-foreign-toplevel / ext-foreign-toplevel-list window list without Pastel
 - [ ] text-input-v3 (IME), clipboard and compose (dead keys) in palettes-wayland
 - [ ] Cursor without cursor-shape-v1 (cursor theme loading)
-- [ ] Switch `pastel-ipc` to a git dependency once Pastel is pushed
 - [ ] Services: battery (UPower via aegle-dbus), network, MPRIS, notifications server,
       system tray (StatusNotifierHost), brightness, keyboard layout
 - [ ] Session lock surface (ext-session-lock-v1)

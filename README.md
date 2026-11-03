@@ -57,7 +57,7 @@ fn main() -> Result<()> {
 
 ## Building
 
-Rust ≥ 1.88, libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan driver. A sibling checkout of [Pastel](https://github.com/antinomie1/Pastel) at `../Pastel` provides `pastel-ipc`.
+Rust ≥ 1.88, libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan driver.
 
 ```sh
 cargo build --release

@@ -57,7 +57,7 @@ fn main() -> Result<()> {
 
 ## 构建
 
-需要 Rust ≥ 1.88、libxkbcommon、libpipewire-0.3、clang（bindgen）与 Vulkan 驱动。`pastel-ipc` 来自同级目录 `../Pastel` 中的 [Pastel](https://github.com/antinomie1/Pastel)。
+需要 Rust ≥ 1.88、libxkbcommon、libpipewire-0.3、clang（bindgen）与 Vulkan 驱动。
 
 ```sh
 cargo build --release

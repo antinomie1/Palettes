@@ -14,7 +14,7 @@ surfaces. It works with any wlr-layer-shell compositor and integrates deeply wit
 ## Commands
 
 ```sh
-cargo build                          # needs libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan loader, ../Pastel
+cargo build                          # needs libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan loader
 cargo test                           # every crate's tests/; live parts skip without WAYLAND_DISPLAY / PipeWire
 cargo run -p palettes --example bar  # the Rust bar on every output
 cargo run -p palettes -- examples/bar.aegle    # the markup runner; save the file to reload
@@ -83,8 +83,13 @@ They report through plain callbacks; the facade moves values onto the UI thread.
   names, never paths: an app id or icon name resolves through desktop entries and the
   icon theme, so records carry ready-to-load paths. Fonts in an asset root's `fonts/`
   register themselves. Every loaded file is watched; a change reloads what used it.
-- **Pastel's protocol is Pastel's.** Wire types live in Pastel's `pastel-ipc` crate;
-  palettes-workspace adapts them to the neutral model. Change both together.
+- **Pastel's protocol is Pastel's.** Wire types live in Pastel's `pastel-ipc` crate,
+  pinned by `rev` in the root `Cargo.toml`; palettes-workspace adapts them to the
+  neutral model. To change both together, add locally and don't commit:
+  ```toml
+  [patch."https://github.com/antinomie1/Pastel"]
+  pastel-ipc = { path = "../Pastel/crates/pastel-ipc" }
+  ```
 - **Don't over-engineer.** A trait exists because two implementations exist now.
 - **Comments say why**, in English. Docs are English; READMEs are bilingual.
 - **Commits**: coherent milestones, signed, with the co-author trailer.
