@@ -13,6 +13,7 @@ mod channel;
 mod input;
 mod options;
 mod runtime;
+mod shape;
 mod shell;
 mod surface;
 

@@ -7,22 +7,23 @@
 //! (pointer, keyboard through xkbcommon with key repeat, touch). There are no
 //! ordinary toplevel windows and no software buffers: frames are presented by
 //! a GPU renderer through [`WindowSurface`] leases, paced by frame callbacks.
-//! Where the compositor offers ext-background-effect-v1, [`Wayland::set_blur`]
-//! has it blur what lies behind a region of a surface.
+//! [`Wayland::set_input`] limits input to a region of a surface, such as its
+//! rounded shape; where the compositor offers ext-background-effect-v1,
+//! [`Wayland::set_blur`] has it blur what lies behind a region.
 //!
 //! The loop blocks in `poll` on the Wayland socket and a wake `eventfd`; it
 //! wakes on its own only to repeat a held key.
 
-mod blur;
 mod gpu;
 mod keyboard;
 mod output;
 mod platform;
 mod pointer;
+mod region;
 mod state;
 mod window;
 
-pub use blur::rounded_rects;
 pub use gpu::WindowSurface;
 pub use keyboard::logical_key;
 pub use platform::Wayland;
+pub use region::rounded_rects;

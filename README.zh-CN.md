@@ -54,7 +54,7 @@ fn main() -> Result<()> {
 }
 ```
 
-Surface 即其根容器：`bar.set_radius(12.0)`、`bar.set_background(color)`、`bar.set_opacity(0.9)` 设定形状与色调，`bar.set_blur(&bar, true)` 让混成器模糊其后的桌面。
+Surface 即其根容器：`bar.set_radius(12.0)`、`bar.set_background(color)`、`bar.set_opacity(0.9)` 设定形状与色调，`bar.set_blur(&bar, true)` 让混成器模糊其后的桌面。输入区域跟随圆角形状；`bar.set_input(&pill, true)` 可将其限定在指定节点上。
 
 在 Rust 中运行文档：`palettes::run("bar.aegle")`。更多示例见 [`crates/palettes/examples`](crates/palettes/examples) 与 [`examples`](examples)。
 

@@ -1,9 +1,11 @@
-//! Background blur through ext-background-effect-v1: the compositor blurs
-//! what lies behind a region of a translucent surface.
+//! Surface regions: where a surface takes input, and where the compositor
+//! blurs what lies behind it (ext-background-effect-v1).
 
 use crate::state::State;
 use aegle_platform::{Error, PixelRect, Rect, Result, WindowId};
-use wayland_client::{Connection, Dispatch, QueueHandle, delegate_noop};
+use wayland_client::{
+    Connection, Dispatch, QueueHandle, delegate_noop, protocol::wl_region::WlRegion,
+};
 use wayland_protocols::ext::background_effect::v1::client::{
     ext_background_effect_manager_v1::{self, ExtBackgroundEffectManagerV1},
     ext_background_effect_surface_v1::ExtBackgroundEffectSurfaceV1,
@@ -52,6 +54,26 @@ pub fn rounded_rects(rect: Rect, radius: f32, out: &mut Vec<PixelRect>) {
 }
 
 impl State {
+    fn region(&self, rects: &[PixelRect]) -> WlRegion {
+        let region = self.globals.compositor.create_region(&self.qh, ());
+        for r in rects {
+            region.add(r.x as i32, r.y as i32, r.width as i32, r.height as i32);
+        }
+        region
+    }
+
+    /// Sets where a window takes pointer and touch input; `None` for all of
+    /// it. Takes effect with the window's next commit.
+    pub fn set_input(&mut self, id: WindowId, rects: Option<&[PixelRect]>) -> Result<()> {
+        let region = rects.map(|rects| self.region(rects));
+        let window = self.window(id).ok_or(Error::InvalidWindow)?;
+        window.surface.set_input_region(region.as_ref());
+        if let Some(region) = region {
+            region.destroy();
+        }
+        Ok(())
+    }
+
     /// Sets the blur region of a window; empty removes it. Takes effect with
     /// the window's next commit. Without the protocol, nothing happens.
     pub fn set_blur(&mut self, id: WindowId, rects: &[PixelRect]) -> Result<()> {
@@ -60,7 +82,7 @@ impl State {
             self.window(id).ok_or(Error::InvalidWindow)?;
             return Ok(());
         };
-        let compositor = self.globals.compositor.clone();
+        let region = (!rects.is_empty()).then(|| self.region(rects));
         let window = self.window_mut(id).ok_or(Error::InvalidWindow)?;
         if rects.is_empty() && window.effect.is_none() {
             return Ok(());
@@ -68,16 +90,10 @@ impl State {
         let effect = window
             .effect
             .get_or_insert_with(|| manager.get_background_effect(&window.surface, &qh, ()));
-        if rects.is_empty() {
-            effect.set_blur_region(None);
-            return Ok(());
+        effect.set_blur_region(region.as_ref());
+        if let Some(region) = region {
+            region.destroy();
         }
-        let region = compositor.create_region(&qh, ());
-        for r in rects {
-            region.add(r.x as i32, r.y as i32, r.width as i32, r.height as i32);
-        }
-        effect.set_blur_region(Some(&region));
-        region.destroy();
         Ok(())
     }
 }
@@ -97,4 +113,4 @@ impl Dispatch<ExtBackgroundEffectManagerV1, ()> for State {
 }
 
 delegate_noop!(State: ignore ExtBackgroundEffectSurfaceV1);
-delegate_noop!(State: ignore wayland_client::protocol::wl_region::WlRegion);
+delegate_noop!(State: ignore WlRegion);

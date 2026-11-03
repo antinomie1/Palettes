@@ -54,7 +54,7 @@ fn main() -> Result<()> {
 }
 ```
 
-A surface is its root container: `bar.set_radius(12.0)`, `bar.set_background(color)` and `bar.set_opacity(0.9)` shape and tint it, and `bar.set_blur(&bar, true)` blurs the desktop behind it.
+A surface is its root container: `bar.set_radius(12.0)`, `bar.set_background(color)` and `bar.set_opacity(0.9)` shape and tint it, and `bar.set_blur(&bar, true)` blurs the desktop behind it. Input follows the rounded shape; `bar.set_input(&pill, true)` limits it to chosen nodes.
 
 `palettes::run("bar.aegle")` runs a document from Rust. More in [`crates/palettes/examples`](crates/palettes/examples) and [`examples`](examples).
 

@@ -1,5 +1,5 @@
-//! Blur regions: rounded rectangles as the whole-pixel rectangles a
-//! wl_region takes.
+//! Input and blur regions: rounded rectangles as the whole-pixel
+//! rectangles a wl_region takes.
 
 use aegle_platform::{PixelRect, Rect};
 use palettes_wayland::rounded_rects;

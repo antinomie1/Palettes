@@ -172,10 +172,13 @@ pub(crate) fn attach(node: &Node, surface: &Surface) {
         panel.surface = Some(surface.clone());
         Some(panel.blur)
     });
-    if let Some(blur) = blur
-        && let Err(e) = surface.set_blur(node, blur)
-    {
-        eprintln!("palettes: blurring a panel: {e}");
+    let Some(blur) = blur else { return };
+    // The panel is the surface's shape: clicks around its corners go through.
+    let shaped = surface
+        .set_input(node, true)
+        .and_then(|()| surface.set_blur(node, blur));
+    if let Err(e) = shaped {
+        eprintln!("palettes: shaping a panel: {e}");
     }
 }
 

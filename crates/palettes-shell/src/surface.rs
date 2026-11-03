@@ -79,6 +79,15 @@ impl Surface {
             .set_layer(self.id, options.layer, size)?)
     }
 
+    /// Takes pointer and touch input only on `node`, a control of this
+    /// surface, within its rounded bounds; clicks elsewhere reach what is
+    /// below. Several nodes, like separate pills, can each take input.
+    /// With none, the surface takes input on its root's rounded bounds:
+    /// everywhere but outside the corners of `bar.set_radius(…)`.
+    pub fn set_input(&self, node: &Node, input: bool) -> Result<()> {
+        self.with_shape(|shape| crate::shape::toggle(&mut shape.input, node, input))
+    }
+
     /// Has the compositor blur the desktop behind `node`, a control of this
     /// surface, within its rounded bounds: frosted glass under a translucent
     /// background. `bar.set_blur(&bar, true)` blurs behind the whole surface;
@@ -86,6 +95,10 @@ impl Surface {
     /// follows the node's bounds, corner radius and visibility. Compositors
     /// without ext-background-effect-v1 show no blur.
     pub fn set_blur(&self, node: &Node, blur: bool) -> Result<()> {
+        self.with_shape(|shape| crate::shape::toggle(&mut shape.blur, node, blur))
+    }
+
+    fn with_shape(&self, change: impl FnOnce(&mut crate::shape::Shape)) -> Result<()> {
         let inner = self.inner()?;
         let mut runtime = inner.runtime.borrow_mut();
         let entry = runtime
@@ -93,10 +106,7 @@ impl Surface {
             .iter_mut()
             .find(|e| e.id == self.id)
             .ok_or(UiError::DeadHandle)?;
-        entry.blur.retain(|n| n.id() != node.id());
-        if blur {
-            entry.blur.push(node.clone());
-        }
+        change(&mut entry.shape);
         Ok(())
     }
 

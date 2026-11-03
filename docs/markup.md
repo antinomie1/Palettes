@@ -49,7 +49,7 @@ Panel {
 }
 ```
 
-`blur` follows the panel's bounds, `radius` and visibility. It needs a compositor with ext-background-effect-v1 (KWin 6, Pastel with `blur` on); elsewhere the panel is only translucent. Pastel blurs the wallpaper and layers below a panel, not windows, when `blur-xray` is on. `backdrop_blur` on a control blurs what the panel itself draws beneath that control. `shadow` draws inside the surface, so give it room with `padding`. See `examples/glass.aegle`.
+Input follows the same shape: clicks around a rounded panel's corners reach what is below. `blur` follows the panel's bounds, `radius` and visibility. It needs a compositor with ext-background-effect-v1 (KWin 6, Pastel with `blur` on); elsewhere the panel is only translucent. Pastel blurs the wallpaper and layers below a panel, not windows, when `blur-xray` is on. `backdrop_blur` on a control blurs what the panel itself draws beneath that control. `shadow` draws inside the surface, so give it room with `padding`. See `examples/glass.aegle`.
 
 ## Icon
 

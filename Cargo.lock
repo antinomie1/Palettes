@@ -1067,6 +1067,8 @@ dependencies = [
  "aegle-ui",
  "aegle-widgets",
  "palettes-wayland",
+ "wayland-client",
+ "wayland-protocols-wlr",
 ]
 
 [[package]]
