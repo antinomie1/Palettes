@@ -57,9 +57,12 @@ impl Wayland {
         self.flush()
     }
 
+    /// Sends queued requests. A full socket keeps the rest for the next
+    /// flush; a closed connection is an error, so the loop ends.
     fn flush(&self) -> Result<()> {
         match self.connection.flush() {
-            Ok(()) | Err(WaylandError::Io(_)) => Ok(()),
+            Ok(()) => Ok(()),
+            Err(WaylandError::Io(e)) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(()),
             Err(error) => Err(backend(error)),
         }
     }
@@ -193,8 +196,11 @@ impl Platform for Wayland {
                 (ready(0), ready(1), self.portal.is_some() && ready(2))
             };
             if readable {
+                // Another reader may have taken the events; a closed
+                // connection is an error, or the loop would spin on it.
                 match guard.read() {
-                    Ok(_) | Err(WaylandError::Io(_)) => {}
+                    Ok(_) => {}
+                    Err(WaylandError::Io(e)) if e.kind() == std::io::ErrorKind::WouldBlock => {}
                     Err(error) => return Err(backend(error)),
                 }
             } else {
