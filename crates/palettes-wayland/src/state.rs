@@ -16,6 +16,7 @@ use wayland_client::{
     },
 };
 use wayland_protocols::{
+    ext::background_effect::v1::client::ext_background_effect_manager_v1::ExtBackgroundEffectManagerV1,
     wp::{
         cursor_shape::v1::client::wp_cursor_shape_manager_v1::WpCursorShapeManagerV1,
         fractional_scale::v1::client::{
@@ -43,6 +44,7 @@ pub(crate) struct Globals {
     pub fractional: Option<WpFractionalScaleManagerV1>,
     pub cursor_shape: Option<WpCursorShapeManagerV1>,
     pub xdg_output: Option<ZxdgOutputManagerV1>,
+    pub background_effect: Option<ExtBackgroundEffectManagerV1>,
 }
 
 pub(crate) struct State {
@@ -72,6 +74,7 @@ impl State {
             fractional: globals.bind(&qh, 1..=1, ()).ok(),
             cursor_shape: globals.bind(&qh, 1..=1, ()).ok(),
             xdg_output: globals.bind(&qh, 2..=3, ()).ok(),
+            background_effect: globals.bind(&qh, 1..=1, ()).ok(),
         };
         let mut state = Self {
             globals: globals_bound,

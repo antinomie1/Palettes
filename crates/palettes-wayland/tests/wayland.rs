@@ -95,6 +95,12 @@ fn a_panel_and_its_popup_are_configured() {
         &mut wayland,
         |e| matches!(e, Event::Configure { window, .. } if *window == popup)
     ));
+    // Blur is best effort: set, replaced and removed without errors anywhere.
+    let mut rects = Vec::new();
+    palettes_wayland::rounded_rects(Rect::new(0.0, 0.0, 80.0, 40.0), 8.0, &mut rects);
+    wayland.set_blur(popup, &rects).unwrap();
+    wayland.set_blur(popup, &rects[..1]).unwrap();
+    wayland.set_blur(panel, &[]).unwrap();
     wayland.remove_window(popup).unwrap();
     wayland.remove_window(panel).unwrap();
     assert!(wayland.window_info(panel).is_err());

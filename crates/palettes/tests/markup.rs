@@ -23,6 +23,17 @@ fn the_example_bar_checks() {
 }
 
 #[test]
+fn panels_take_visual_effects() {
+    let glass = document(
+        "glass.aegle",
+        "use \"palettes.aegle\"\nPanel {\n    offset: 8dp\n    radius: 12dp\n    background: #1e1e2ecc\n    opacity: 0.9\n    blur: true\n    Text { text: \"glass\" }\n}\n",
+    );
+    markup::check(&glass).unwrap();
+    let bad = document("bad-blur.aegle", "Panel { blur: 3 }");
+    assert!(markup::check(&bad).is_err());
+}
+
+#[test]
 fn checking_reports_mistakes_with_their_place() {
     let bad = document(
         "bad.aegle",

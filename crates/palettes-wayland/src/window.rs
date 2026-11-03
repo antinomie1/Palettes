@@ -7,6 +7,7 @@ use aegle_platform::{
 };
 use wayland_client::{Connection, Dispatch, Proxy, QueueHandle, protocol::wl_surface::WlSurface};
 use wayland_protocols::{
+    ext::background_effect::v1::client::ext_background_effect_surface_v1::ExtBackgroundEffectSurfaceV1,
     wp::{
         fractional_scale::v1::client::wp_fractional_scale_v1::WpFractionalScaleV1,
         viewporter::client::wp_viewport::WpViewport,
@@ -41,6 +42,8 @@ pub(crate) struct Window {
     pub role: Role,
     viewport: Option<WpViewport>,
     fractional: Option<WpFractionalScaleV1>,
+    /// Created the first time the window asks for blur.
+    pub effect: Option<ExtBackgroundEffectSurfaceV1>,
     pub info: WindowInfo,
     /// The scale and logical size last applied to the surface.
     applied: Option<(f32, PixelSize)>,
@@ -155,6 +158,7 @@ impl State {
             role,
             viewport,
             fractional,
+            effect: None,
             info: WindowInfo {
                 size: options.size,
                 buffer: options.size,
@@ -323,6 +327,9 @@ impl State {
         }
         if let Some(fractional) = window.fractional {
             fractional.destroy();
+        }
+        if let Some(effect) = window.effect {
+            effect.destroy();
         }
         window.surface.destroy();
         self.events.retain(|event| event.window() != Some(id));

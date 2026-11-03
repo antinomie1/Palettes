@@ -29,8 +29,27 @@ A column whose properties place its surface. All of them can be bound.
 | `keyboard` | `none` `exclusive` `on_demand` | `none` | Keyboard focus policy; launchers use `exclusive` |
 | `offset` | length | `0` | Distance from the anchored edges |
 | `output` | line | `""` | Only this output (`DP-1`); empty for every output |
+| `blur` | bool | `false` | The compositor blurs the desktop behind the panel's rounded shape |
 
 Layout properties (`padding`, `gap`, `background`, …) apply as on `Column`.
+
+### Visual effects
+
+The panel fills a transparent surface and paints only itself, so its own style properties shape what shows of the desktop:
+
+```text
+Panel {
+    edge: top
+    size: 36dp
+    offset: 8dp             // float it off the edges
+    radius: 18dp            // round corners; the desktop shows around them
+    background: #1e1e2ea0   // translucent; the theme background by default
+    opacity: 0.95           // the whole panel, contents included
+    blur: true              // frosted glass behind its shape
+}
+```
+
+`blur` follows the panel's bounds, `radius` and visibility. It needs a compositor with ext-background-effect-v1 (KWin 6, Pastel with `blur` on); elsewhere the panel is only translucent. Pastel blurs the wallpaper and layers below a panel, not windows, when `blur-xray` is on. `backdrop_blur` on a control blurs what the panel itself draws beneath that control. `shadow` draws inside the surface, so give it room with `padding`. See `examples/glass.aegle`.
 
 ## Icon
 

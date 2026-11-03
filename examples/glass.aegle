@@ -1,0 +1,25 @@
+// A floating, rounded, translucent bar with the desktop blurred behind it:
+// `cargo run -p palettes -- examples/glass.aegle`. Blur needs a compositor
+// with ext-background-effect-v1 (KWin, Pastel); elsewhere it is just translucent.
+use "palettes.aegle"
+
+Panel {
+    edge: top
+    size: 36dp
+    offset: 8dp
+    radius: 18dp
+    background: #1e1e2ea0
+    blur: true
+    padding: [0dp, 16dp]
+
+    state time: string = ""
+    state focused_title: string = ""
+
+    Row {
+        grow: 1
+        gap: 12dp
+        align: center
+        Text { text: focused_title; grow: 1; foreground: #cdd6f4 }
+        Text { text: time; foreground: #cdd6f4 }
+    }
+}

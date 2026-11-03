@@ -25,7 +25,7 @@ Background threads, each blocked until it has something to say: clock (`timerfd`
 
 ## Rendering
 
-Every surface has an aegle `WindowRenderer` on one shared Vulkan device and glyph cache, with a translucent swapchain. Scenes are recorded in logical pixels and scaled to the surface's fractional scale; a viewport maps the buffer back to logical size. Damage from the tree limits what is redrawn.
+Every surface has an aegle `WindowRenderer` on one shared Vulkan device and glyph cache, with a translucent swapchain. Scenes are recorded in logical pixels and scaled to the surface's fractional scale; a viewport maps the buffer back to logical size. Damage from the tree limits what is redrawn. Frames clear to transparent; the root paints the theme background (a token binding, so it follows dark mode), and documents make the root transparent so the `Panel` paints itself. Blur is the compositor's: a surface keeps the nodes it blurs behind, and after each refresh their rounded bounds become whole-pixel rectangles (`palettes_wayland::rounded_rects`) sent through ext-background-effect-v1 when they change, carried by the next frame's commit.
 
 ## Surfaces
 

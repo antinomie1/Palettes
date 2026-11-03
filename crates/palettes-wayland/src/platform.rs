@@ -40,6 +40,15 @@ impl Wayland {
         self.state.outputs.iter().map(|o| o.info()).collect()
     }
 
+    /// Has the compositor blur what lies behind `rects` of a window, in
+    /// logical surface coordinates (see [`rounded_rects`](crate::rounded_rects));
+    /// empty removes the blur. Applies with the window's next frame. A
+    /// compositor without ext-background-effect-v1 ignores it.
+    pub fn set_blur(&mut self, window: WindowId, rects: &[PixelRect]) -> Result<()> {
+        self.state.set_blur(window, rects)?;
+        self.flush()
+    }
+
     fn flush(&self) -> Result<()> {
         match self.connection.flush() {
             Ok(()) | Err(WaylandError::Io(_)) => Ok(()),

@@ -2,7 +2,7 @@
 //! `Icon`, an icon by theme name.
 
 use aegle_loader::{Elements, element};
-use aegle_ui::{Container, Node, NodeId};
+use aegle_ui::{ColorSlot, Container, Node, NodeId, Theme};
 use aegle_widgets::{ImageView, Widgets};
 use palettes_shell::{KeyboardInteractivity, Layer, PanelOptions, Surface};
 use std::{cell::RefCell, collections::HashMap};
@@ -95,6 +95,8 @@ impl Placement {
 struct Registered {
     node: Node,
     placement: Placement,
+    /// The compositor blurs the desktop behind the panel's shape.
+    blur: bool,
     surface: Option<Surface>,
 }
 
@@ -105,6 +107,10 @@ thread_local! {
 
 fn panel(parent: &Container) -> Container {
     let column = parent.column();
+    // The panel is the visible shape, filling a transparent surface: its own
+    // `background`, `radius` and `opacity` decide what shows of the desktop.
+    column.set_grow(1.0);
+    column.bind_color(ColorSlot::Background, Theme::BACKGROUND);
     PANELS.with_borrow_mut(|panels| {
         panels.retain(|_, p| p.node.is_alive());
         let node = (*column).clone();
@@ -113,6 +119,7 @@ fn panel(parent: &Container) -> Container {
             Registered {
                 node,
                 placement: Placement::default(),
+                blur: false,
                 surface: None,
             },
         );
@@ -139,6 +146,20 @@ fn update(container: &Container, change: impl FnOnce(&mut Placement)) {
     }
 }
 
+/// Turns the compositor's blur behind a panel on or off.
+fn set_blur(container: &Container, blur: bool) {
+    let surface = PANELS.with_borrow_mut(|panels| {
+        let panel = panels.get_mut(&container.id())?;
+        panel.blur = blur;
+        panel.surface.clone()
+    });
+    if let Some(surface) = surface
+        && let Err(e) = surface.set_blur(container, blur)
+    {
+        eprintln!("palettes: blurring a panel: {e}");
+    }
+}
+
 /// The placement of the `Panel` at `node`, if it is one.
 pub(crate) fn placement(node: &Node) -> Option<Placement> {
     PANELS.with_borrow(|panels| panels.get(&node.id()).map(|p| p.placement.clone()))
@@ -146,11 +167,16 @@ pub(crate) fn placement(node: &Node) -> Option<Placement> {
 
 /// Ties the `Panel` at `node` to its surface, so later changes move it.
 pub(crate) fn attach(node: &Node, surface: &Surface) {
-    PANELS.with_borrow_mut(|panels| {
-        if let Some(panel) = panels.get_mut(&node.id()) {
-            panel.surface = Some(surface.clone());
-        }
+    let blur = PANELS.with_borrow_mut(|panels| {
+        let panel = panels.get_mut(&node.id())?;
+        panel.surface = Some(surface.clone());
+        Some(panel.blur)
     });
+    if let Some(blur) = blur
+        && let Err(e) = surface.set_blur(node, blur)
+    {
+        eprintln!("palettes: blurring a panel: {e}");
+    }
 }
 
 fn edge(name: &str) -> Edge {
@@ -244,6 +270,7 @@ element! {
         set keyboard: choice(none, exclusive, on_demand) => |p, v| update(p, |s| s.keyboard = keyboard(v));
         set offset: length => |p, v| update(p, |s| s.offset = v as i32);
         set output: line => |p, v| update(p, |s| s.output = v.to_owned());
+        set blur: bool => set_blur;
     }
     /// An icon by theme name or application id, or an image path; `size` dp square.
     pub Icon(ImageView) {

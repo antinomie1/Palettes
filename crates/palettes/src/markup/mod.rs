@@ -93,6 +93,10 @@ fn open_panel(
     placement: &elements::Placement,
 ) -> Result<Open> {
     let surface = shell.panel(placement.options().on(output.id))?;
+    // The `Panel` fills the surface and paints itself; around its corners
+    // the desktop shows.
+    surface.set_background(aegle_ui::Color::TRANSPARENT);
+    surface.set_padding(0.0);
     let view = match program.build(&surface) {
         Ok(view) => Rc::new(RefCell::new(view)),
         Err(e) => {

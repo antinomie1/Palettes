@@ -8,7 +8,10 @@ use aegle_platform::{
 };
 use aegle_render_vulkan::{SharedDevice, WindowRenderer};
 use aegle_scene::Affine;
-use aegle_ui::{Cursor, Modifiers, Rect, Result, Size, TextSystem, Theme, Ui, Visit};
+use aegle_types::PixelRect;
+use aegle_ui::{
+    Color, ColorSlot, Cursor, Modifiers, Node, Rect, Result, Size, TextSystem, Theme, Ui, Visit,
+};
 use palettes_wayland::{Wayland, WindowSurface};
 use std::{cell::RefCell, rc::Rc, time::Instant};
 
@@ -26,6 +29,18 @@ pub(crate) struct Entry {
     /// The platform allows a frame now.
     pub ready: bool,
     pub parent: Option<WindowId>,
+    /// Nodes the compositor blurs behind, and the region last sent for them.
+    pub blur: Vec<Node>,
+    pub blur_region: Vec<PixelRect>,
+}
+
+/// The region covering every visible node of `nodes` with its corners.
+fn blur_region(nodes: &[Node]) -> Vec<PixelRect> {
+    let mut rects = Vec::new();
+    for node in nodes.iter().filter(|n| n.is_visible() && n.opacity() > 0.0) {
+        palettes_wayland::rounded_rects(node.bounds(), node.appearance().radius, &mut rects);
+    }
+    rects
 }
 
 pub(crate) struct Runtime {
@@ -92,6 +107,10 @@ impl Runtime {
             ui.set_double_click(interval, 4.0);
         }
         ui.resize(Size::new(size.width as f32, size.height as f32));
+        // Surfaces clear to transparent; the root paints the theme's
+        // background, so a translucent or rounded one shows the desktop.
+        ui.root()
+            .bind_color(ColorSlot::Background, Theme::BACKGROUND);
         let id = self.platform.create_window(options)?;
         let renderer = match self.presenter(id) {
             Ok(renderer) => renderer,
@@ -112,6 +131,8 @@ impl Runtime {
             flick: Vec::new(),
             ready: false,
             parent: options.popup.map(|p| p.parent),
+            blur: Vec::new(),
+            blur_region: Vec::new(),
         });
         Ok((id, ui))
     }
@@ -180,6 +201,16 @@ impl Runtime {
             if entry.ui.refresh()? {
                 self.platform.request_redraw(entry.id)?;
             }
+            if !entry.blur.is_empty() || !entry.blur_region.is_empty() {
+                entry.blur.retain(Node::is_alive);
+                let region = blur_region(&entry.blur);
+                if region != entry.blur_region {
+                    // Double-buffered: the next frame's commit carries it.
+                    self.platform.set_blur(entry.id, &region)?;
+                    self.platform.request_redraw(entry.id)?;
+                    entry.blur_region = region;
+                }
+            }
             let cursor = entry.ui.cursor();
             if cursor != entry.cursor {
                 self.platform.set_cursor(entry.id, cursor)?;
@@ -207,15 +238,15 @@ impl Runtime {
                     .as_mut()
                     .expect("open surfaces have presenters"),
             );
-            let background = ui.background();
             let presented = platform.present_external(id, |size| -> Result<bool> {
-                let mut frame = match renderer.begin_frame(size.width, size.height, background) {
-                    Ok(Some(frame)) => frame,
-                    Ok(None) | Err(aegle_render_vulkan::Error::SurfaceOutOfDate) => {
-                        return Ok(false);
-                    }
-                    Err(error) => return Err(error.into()),
-                };
+                let mut frame =
+                    match renderer.begin_frame(size.width, size.height, Color::TRANSPARENT) {
+                        Ok(Some(frame)) => frame,
+                        Ok(None) | Err(aegle_render_vulkan::Error::SurfaceOutOfDate) => {
+                            return Ok(false);
+                        }
+                        Err(error) => return Err(error.into()),
+                    };
                 if let Some(logical) = ui.damage() {
                     let [width, height] = frame.extent();
                     let mut pixels = aegle_types::Region::default();

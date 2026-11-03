@@ -8,6 +8,7 @@ A Wayland desktop shell and widget library in Rust: bars, docks, launchers, popu
 - **Shell state by name**: declare `state time`, `state workspaces`, `state volume`… and it stays current
 - **Automatic assets**: theme icons by name or app id (SVG included), fonts from `fonts/`, paths relative to the document
 - **Services**: clock, workspaces and windows (Pastel IPC; workspaces also through ext-workspace-v1 on other compositors), PipeWire volume and mute, installed applications
+- **Glass and curves**: rounded, translucent panels with the desktop blurred behind them (`radius`, `background: #1e1e2ea0`, `opacity`, `blur: true`), on compositors with ext-background-effect-v1 such as KWin and Pastel
 - **Idle means idle**: nothing runs between changes; services start only when used
 - **Composable**: any aegle control library, such as [am3](https://github.com/antinomie1/am3) (`--features am3`)
 
@@ -52,6 +53,8 @@ fn main() -> Result<()> {
     shell.run()
 }
 ```
+
+A surface is its root container: `bar.set_radius(12.0)`, `bar.set_background(color)` and `bar.set_opacity(0.9)` shape and tint it, and `bar.set_blur(&bar, true)` blurs the desktop behind it.
 
 `palettes::run("bar.aegle")` runs a document from Rust. More in [`crates/palettes/examples`](crates/palettes/examples) and [`examples`](examples).
 

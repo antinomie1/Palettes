@@ -8,6 +8,7 @@ Rust 编写的 Wayland 桌面 shell 与桌面小控件库：状态栏、程序�
 - **按名字取 shell 状态**：声明 `state time`、`state workspaces`、`state volume`……即自动保持最新
 - **资产自动化**：按名字或 app id 查主题图标（含 SVG）、自动注册 `fonts/` 中的字体、路径相对文档解析
 - **服务**：时钟、工作区与窗口（Pastel IPC；其他混成器上经 ext-workspace-v1 获取工作区）、PipeWire 音量与静音、已安装应用
+- **毛玻璃与圆角**：圆角、半透明面板，并让混成器模糊其后的桌面（`radius`、`background: #1e1e2ea0`、`opacity`、`blur: true`），需混成器支持 ext-background-effect-v1，如 KWin 与 Pastel
 - **空闲即静止**：无变化时不运行任何代码；服务在首次使用时才启动
 - **可组合**：可与任何 aegle 控件库结合，例如 [am3](https://github.com/antinomie1/am3)（`--features am3`）
 
@@ -52,6 +53,8 @@ fn main() -> Result<()> {
     shell.run()
 }
 ```
+
+Surface 即其根容器：`bar.set_radius(12.0)`、`bar.set_background(color)`、`bar.set_opacity(0.9)` 设定形状与色调，`bar.set_blur(&bar, true)` 让混成器模糊其后的桌面。
 
 在 Rust 中运行文档：`palettes::run("bar.aegle")`。更多示例见 [`crates/palettes/examples`](crates/palettes/examples) 与 [`examples`](examples)。
 

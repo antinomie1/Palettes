@@ -79,6 +79,27 @@ impl Surface {
             .set_layer(self.id, options.layer, size)?)
     }
 
+    /// Has the compositor blur the desktop behind `node`, a control of this
+    /// surface, within its rounded bounds: frosted glass under a translucent
+    /// background. `bar.set_blur(&bar, true)` blurs behind the whole surface;
+    /// several nodes, like separate pills, can each be blurred. The blur
+    /// follows the node's bounds, corner radius and visibility. Compositors
+    /// without ext-background-effect-v1 show no blur.
+    pub fn set_blur(&self, node: &Node, blur: bool) -> Result<()> {
+        let inner = self.inner()?;
+        let mut runtime = inner.runtime.borrow_mut();
+        let entry = runtime
+            .entries
+            .iter_mut()
+            .find(|e| e.id == self.id)
+            .ok_or(UiError::DeadHandle)?;
+        entry.blur.retain(|n| n.id() != node.id());
+        if blur {
+            entry.blur.push(node.clone());
+        }
+        Ok(())
+    }
+
     /// Opens a popup attached to this surface.
     pub fn popup(&self, options: PopupOptions) -> Result<Surface> {
         let inner = self.inner()?;
