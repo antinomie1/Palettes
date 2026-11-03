@@ -38,10 +38,7 @@ New scene primitives, on every aegle renderer:
 - [ ] Input and blur regions leave out cut holes
 - [ ] Custom fragment shaders (uv, size, time, values); frames only while `time` is used  ← next
 
-Paused 2026-11-03 after the cut. Local only, not pushed: aegle aa231e3..3379712 and
-Palettes 255d28d..HEAD. Palettes builds against ../aegle through an uncommitted
-`[patch]`; after pushing aegle, drop it, `cargo update` the aegle crates and commit
-Cargo.lock.
+Paused 2026-11-03 after the cut; everything is pushed.
 
 Services beyond the ones below: bluetooth, CPU and memory, app launcher entries,
 a palette picked from the wallpaper, blurred image backgrounds.
