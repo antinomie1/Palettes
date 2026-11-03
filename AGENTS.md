@@ -14,12 +14,20 @@ surfaces. It works with any wlr-layer-shell compositor and integrates deeply wit
 ## Commands
 
 ```sh
-cargo build                          # needs libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan loader
-cargo test                           # every crate's tests/; no compositor needed
-cargo run -p palettes --example bar  # a top bar on every output of the running session
-cargo run -p palettes -- examples/bar.aegle   # the markup runner
+cargo build                          # needs libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan loader, ../Pastel
+cargo test                           # every crate's tests/; live parts skip without WAYLAND_DISPLAY / PipeWire
+cargo run -p palettes --example bar  # the Rust bar on every output
+cargo run -p palettes -- examples/bar.aegle    # the markup runner; save the file to reload
+cargo run -p palettes -- --check examples/bar.aegle
 cargo clippy --all-targets -- -D warnings
 ```
+
+Screenshots need a compositor with screencopy. KDE has none; use a headless Pastel:
+`LUMINARIA_BACKEND=headless PASTEL_EXIT_MS=10000 ../Pastel/target/debug/pastel --config <empty>`,
+then run against its `WAYLAND_DISPLAY` and capture with `grim`.
+
+Read `docs/architecture.md` before changing the loop, surfaces or services, and keep
+`docs/markup.md` in step with states, records, actions and `Panel` properties.
 
 ## Layout of the code
 

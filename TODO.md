@@ -12,7 +12,7 @@
 - [x] `palettes-assets`: asset roots, icon themes and desktop entries, fonts dir, file watcher
 - [x] `palettes`: facade, services on the UI thread, markup Panel element, shell states,
       host actions, per-output panels, hot reload, runner binary
-- [ ] Examples, README (en/zh), docs
+- [x] Examples, README (en/zh), docs
 
 ## Later
 
@@ -25,5 +25,8 @@
       system tray (StatusNotifierHost), brightness, keyboard layout
 - [ ] Session lock surface (ext-session-lock-v1)
 - [ ] Wallpaper layer with images
+- [ ] `palettes msg toggle <doc>` over a socket, so compositor keybindings open launchers
+- [ ] Popups and hidden/shown panels from markup
+- [ ] Icons rasterized at the surface's scale rather than a fixed 64 px
 - [ ] A quickshell-like runtime: whole shells as pure aegle markup, maybe scripted with
       Luau; config directory, hot reload of every file, IPC to toggle panels
