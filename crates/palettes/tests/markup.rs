@@ -64,6 +64,22 @@ Panel {
 }
 
 #[test]
+fn shaders_check_and_the_example_program_compiles() {
+    let examples = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples");
+    markup::check(&examples.join("aurora.aegle")).unwrap();
+    let fonts = std::rc::Rc::new(std::cell::RefCell::new(aegle_ui::TextSystem::new()));
+    let ui = aegle_ui::Ui::with_fonts(fonts, aegle_ui::Theme::default()).unwrap();
+    let view = aegle_widgets::Widgets::shader_view(&ui.root());
+    view.load(examples.join("shaders/aurora.wgsl")).unwrap();
+    assert!(view.shader().is_some_and(|s| s.is_animated()));
+    let bad = document(
+        "bad-shader.aegle",
+        "Panel { Shader { source: \"a.wgsl\"; values: [1, 2, 3, 4, 5, 6, 7, 8, 9] } }",
+    );
+    assert!(markup::check(&bad).is_err());
+}
+
+#[test]
 fn checking_reports_mistakes_with_their_place() {
     let bad = document(
         "bad.aegle",

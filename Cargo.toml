@@ -21,11 +21,11 @@ aegle-platform = { git = "https://github.com/antinomie1/aegle", branch = "main" 
 aegle-types = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-portal = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-ui = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["system-fonts", "motion", "grid"] }
-aegle-widgets = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["motion"] }
-aegle-loader = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["motion", "grid"] }
+aegle-widgets = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["motion", "shaders"] }
+aegle-loader = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["motion", "grid", "shaders"] }
 aegle-image = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-scene = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["text"] }
-aegle-render-vulkan = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["text", "window"] }
+aegle-render-vulkan = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["text", "window", "shaders"] }
 raw-window-handle = "0.6.2"
 wayland-client = { version = "0.31.15", features = ["system"] }
 wayland-protocols = { version = "0.32.13", features = ["client", "staging"] }

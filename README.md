@@ -56,7 +56,7 @@ fn main() -> Result<()> {
 
 A surface is its root container: `bar.set_radius(12.0)`, `bar.set_background(color)` and `bar.set_opacity(0.9)` shape and tint it, and `bar.set_blur(&bar, true)` blurs the desktop behind it. Input follows the rounded shape; `bar.set_input(&pill, true)` limits it to chosen nodes.
 
-Markup draws vector shapes (`Shape` with SVG path data, `Arc` for rings and gauges), animates scale, rotation and opacity, eases transitions with springs and Bézier curves, and puts images behind a panel (`Image { fit: cover; inset: 0dp }`); see [`examples/rings.aegle`](examples/rings.aegle) and [`docs/markup.md`](docs/markup.md).
+Markup draws vector shapes (`Shape` with SVG path data, `Arc` for rings and gauges), animates scale, rotation and opacity, eases transitions with springs and Bézier curves, puts images behind a panel (`Image { fit: cover; inset: 0dp }`), and fills elements with WGSL fragment shaders that draw frames only while they use `time` (`Shader { source: "aurora.wgsl" }`); see [`examples/rings.aegle`](examples/rings.aegle), [`examples/aurora.aegle`](examples/aurora.aegle) and [`docs/markup.md`](docs/markup.md).
 
 `palettes::run("bar.aegle")` runs a document from Rust. More in [`crates/palettes/examples`](crates/palettes/examples) and [`examples`](examples).
 

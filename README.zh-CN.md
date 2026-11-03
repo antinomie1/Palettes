@@ -56,7 +56,7 @@ fn main() -> Result<()> {
 
 Surface 即其根容器：`bar.set_radius(12.0)`、`bar.set_background(color)`、`bar.set_opacity(0.9)` 设定形状与色调，`bar.set_blur(&bar, true)` 让混成器模糊其后的桌面。输入区域跟随圆角形状；`bar.set_input(&pill, true)` 可将其限定在指定节点上。
 
-标记可以画矢量形状（`Shape` 用 SVG 路径数据，`Arc` 画环形与仪表），给缩放、旋转与透明度加动画，用弹簧与贝塞尔曲线缓动过渡，并把图片铺在面板背后（`Image { fit: cover; inset: 0dp }`）；见 [`examples/rings.aegle`](examples/rings.aegle) 与 [`docs/markup.md`](docs/markup.md)。
+标记可以画矢量形状（`Shape` 用 SVG 路径数据，`Arc` 画环形与仪表），给缩放、旋转与透明度加动画，用弹簧与贝塞尔曲线缓动过渡，把图片铺在面板背后（`Image { fit: cover; inset: 0dp }`），并用 WGSL 片元着色器填充元素，只有用到 `time` 时才逐帧绘制（`Shader { source: "aurora.wgsl" }`）；见 [`examples/rings.aegle`](examples/rings.aegle)、[`examples/aurora.aegle`](examples/aurora.aegle) 与 [`docs/markup.md`](docs/markup.md)。
 
 在 Rust 中运行文档：`palettes::run("bar.aegle")`。更多示例见 [`crates/palettes/examples`](crates/palettes/examples) 与 [`examples`](examples)。
 

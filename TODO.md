@@ -36,9 +36,9 @@ New scene primitives, on every aegle renderer:
 - [x] Inset shadow: `inset_shadow: [x, y, blur, spread, color]`
 - [x] Cut: `cut: true` punches a hole through what lies beneath
 - [x] Input and blur regions leave out cut holes
-- [ ] Custom fragment shaders (uv, size, time, values); frames only while `time` is used  ← next
+- [x] Custom fragment shaders (uv, size, time, values); frames only while `time` is used
 
-Paused 2026-11-03 after the cut; everything is pushed.
+Every effect above is done (2026-11-04); shaders recompile when their file is saved.
 
 Services beyond the ones below: bluetooth, CPU and memory, app launcher entries,
 a palette picked from the wallpaper, blurred image backgrounds.

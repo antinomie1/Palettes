@@ -1,0 +1,26 @@
+// A custom fragment shader behind a bar: `shaders/aurora.wgsl` names `time`,
+// so the bar draws every frame; save the file to see a change at once.
+// `cargo run -p palettes -- examples/aurora.aegle`
+use "palettes.aegle"
+
+Panel {
+    edge: top
+    size: 40dp
+    span: 480dp
+    offset: 8dp
+    radius: 20dp
+    background: #00000000
+
+    state volume: float = 0.0
+    state time: string = ""
+
+    Stack {
+        grow: 1
+        Shader { source: "shaders/aurora.wgsl"; values: [volume]; inset: 0dp; radius: 20dp }
+        Row {
+            padding: [0dp, 16dp]
+            align: center
+            Text { text: time; grow: 1; foreground: #cdd6f4 }
+        }
+    }
+}

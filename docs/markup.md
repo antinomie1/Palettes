@@ -75,6 +75,31 @@ Panel {
 }
 ```
 
+### Shaders
+
+A `Shader` fills itself with a WGSL fragment program, following its `radius` and `corners`. Like an `Image` it has no size of its own; with `inset: 0dp` in a `Stack` it is a panel's background:
+
+```text
+Stack {
+    Shader { source: "shaders/aurora.wgsl"; values: [volume, 0.5]; inset: 0dp; radius: 20dp }
+    Row { Text { text: time } }
+}
+```
+
+```wgsl
+// shaders/aurora.wgsl
+fn shade(uv: vec2f, size: vec2f) -> vec4f {
+    let band = smoothstep(0.3, 0.0, abs(uv.y - 0.5 - 0.2 * sin(uv.x * 6.0 + time)));
+    return vec4f(0.54, 0.71, 0.98, band * values[0]);
+}
+```
+
+- `shade` gets `uv`, from 0 to 1 across the element from its top-left corner, and `size` in dp, and returns an unpremultiplied sRGB color. It may read `time`, seconds since the program was shown, and `values`, an `array<f32, 8>` filled from `values: [...]` (up to eight numbers or expressions; the rest are zero).
+- A program that never names `time` is drawn once and again only when `values` or its size change. One that names it keeps the panel drawing every frame while it is shown, and nothing else does; with reduced motion `time` stays at zero.
+- `source` resolves like other assets, and saving the file compiles it again. A program that does not compile empties the element, logs `palettes: shader file:line:column: reason` and runs `on failed`, with `self.error`.
+
+See `examples/aurora.aegle`.
+
 ### Shapes and motion
 
 ```text

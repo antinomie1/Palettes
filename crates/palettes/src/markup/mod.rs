@@ -5,13 +5,14 @@
 //! Imports resolve against the importing file; `use "palettes.aegle"` gets
 //! the embedded prelude unless such a file exists. Relative image paths
 //! resolve against the first document's directory, and fonts in any asset
-//! root's `fonts/` are registered at start. Images and icons show their
-//! files again when those change.
+//! root's `fonts/` are registered at start. Images, icons and shaders show
+//! their files again when those change.
 
 mod actions;
 pub mod elements;
 mod follow;
 pub mod image;
+mod shader;
 pub mod states;
 
 use aegle_loader::{Elements, Program, View};
@@ -223,6 +224,7 @@ fn open_document(runner: &mut Runner, path: &Path) -> Result<()> {
 
 fn changed(path: &Path) -> Result<()> {
     image::changed(path);
+    shader::changed(path);
     with_runner(|runner| {
         let Runner {
             shell,

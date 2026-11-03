@@ -1,10 +1,11 @@
 //! Palettes' markup elements: `Panel`, the root of a panel document,
-//! `Icon`, an icon by theme name, and `Image`, which replaces aegle's to
-//! resolve its source like every other asset and follow its file.
+//! `Icon`, an icon by theme name, and `Image` and `Shader`, which replace
+//! aegle's to resolve their sources like every other asset and follow
+//! their files.
 
 use aegle_loader::{Elements, element};
 use aegle_ui::{ColorSlot, Container, Node, NodeId, Theme};
-use aegle_widgets::{Fit, ImageView, Widgets};
+use aegle_widgets::{Fit, ImageView, ShaderView, Widgets};
 use palettes_shell::{KeyboardInteractivity, Layer, PanelOptions, Surface};
 use std::{cell::RefCell, collections::HashMap};
 
@@ -253,6 +254,11 @@ fn show_image(view: &ImageView, source: &str) {
     let _ = crate::markup::image::show(view, &path);
 }
 
+/// Shows the program at `source`, relative to the asset roots; empty clears it.
+fn show_shader(view: &ShaderView, source: &str) {
+    crate::markup::shader::show(view, source);
+}
+
 fn fit(name: &str) -> Fit {
     match name {
         "fill" => Fit::Fill,
@@ -300,6 +306,17 @@ element! {
         event failed => |view, run| view.on_error(move |_| run());
         get error: string => |view| view.error().unwrap_or_default();
     }
+    /// A view whose background is the WGSL program at `source`, relative to
+    /// the asset roots, drawn with `values` (see aegle's `Shader`); saving
+    /// the file shows the new program. A program that does not compile
+    /// empties the view, is logged and raises `failed`.
+    pub Shader(ShaderView) {
+        create |parent| parent.shader_view();
+        set source: line => show_shader;
+        set values: numbers(8) => |view, values| view.set_values(&values.to_vec());
+        event failed => |view, run| view.on_error(move |_| run());
+        get error: string => |view| view.error().unwrap_or_default();
+    }
 }
 
 /// Aegle's built-in elements and Palettes' own, plus am3's `Md*` elements
@@ -309,5 +326,8 @@ pub fn elements() -> Elements {
     let base = am3::elements();
     #[cfg(not(feature = "am3"))]
     let base = Elements::new();
-    base.with::<Panel>().with::<Icon>().with::<Image>()
+    base.with::<Panel>()
+        .with::<Icon>()
+        .with::<Image>()
+        .with::<Shader>()
 }
