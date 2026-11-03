@@ -1,0 +1,42 @@
+// Palettes prelude: `use "palettes.aegle"` in a panel document.
+//
+// Declare any of these states in your document and Palettes keeps them current;
+// leave them out and the service behind them never starts.
+//
+//   state output: string               the output this panel is on, such as "DP-1"
+//   state time: string                 local time, formatted by `time_format`
+//   state time_format: string          strftime pattern, "%H:%M" if empty
+//   state date: string                 local date, formatted by `date_format`
+//   state date_format: string          strftime pattern, "%a %d %b" if empty
+//   state workspaces: list<Workspace>  every workspace, by output
+//   state output_workspaces: list<Workspace>   this panel's output's workspaces
+//   state windows: list<Toplevel>       every window, by workspace
+//   state focused_title: string        the focused window's title
+//   state focused_app: string          its app id
+//   state focused_icon: string         its icon file
+//   state volume: float                default output volume, 1.0 = 100 %
+//   state muted: bool
+//   state mic_volume: float            default input volume
+//   state mic_muted: bool
+//   state audio_device: string         default output's description
+//   state applications: list<App>      launchable applications, by name
+//
+// Host actions, for `on` blocks:
+//
+//   host.spawn(string)             run a command line
+//   host.launch(string)            start an application by desktop id
+//   host.focus_workspace(int)      show a workspace (Workspace.id)
+//   host.focus_window(int)         focus a window (Window.id)
+//   host.close_window(int)
+//   host.compositor(string)        a compositor action, such as "focus-workspace-down"
+//   host.set_volume(float)         0.0–1.5
+//   host.toggle_mute()
+//   host.set_mic_volume(float)
+//   host.toggle_mic_mute()
+//   host.toggle(string)            open or close another panel document
+//   host.reload()                  reload every document
+//   host.quit()
+
+record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
+record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool }
+record App { id: string; name: string; icon: string }

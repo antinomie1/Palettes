@@ -23,6 +23,7 @@ aegle-portal = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-ui = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["system-fonts", "motion"] }
 aegle-widgets = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["motion"] }
 aegle-loader = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["motion"] }
+aegle-image = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-scene = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["text"] }
 aegle-render-vulkan = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["text", "window"] }
 raw-window-handle = "0.6.2"

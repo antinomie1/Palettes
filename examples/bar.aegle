@@ -1,0 +1,43 @@
+// A bar on every output: workspaces of its output, the focused window, volume
+// and a clock. Run with `cargo run -p palettes -- examples/bar.aegle`, then
+// edit and save this file to see it reload.
+use "palettes.aegle"
+
+Panel {
+    edge: top
+    size: 34dp
+    padding: [0dp, 8dp]
+
+    state output_workspaces: list<Workspace> = []
+    state focused_title: string = ""
+    state focused_icon: string = ""
+    state volume: float = 0.0
+    state muted: bool = false
+    state time: string = ""
+    state date: string = ""
+
+    Row {
+        grow: 1
+        gap: 8dp
+        align: center
+        Row {
+            gap: 4dp
+            for ws in output_workspaces key ws.id {
+                if ws.active {
+                    Button { text: "● " + ws.name; on clicked { host.focus_workspace(ws.id) } }
+                } else {
+                    Button { text: ws.name; on clicked { host.focus_workspace(ws.id) } }
+                }
+            }
+        }
+        Icon { name: focused_icon; size: 18dp }
+        Text { text: focused_title; grow: 1 }
+        Icon { name: "audio-volume-high"; visible: !muted }
+        Icon { name: "audio-volume-muted"; visible: muted }
+        Button {
+            text: str(int(volume * 100.0)) + "%"
+            on clicked { host.toggle_mute() }
+        }
+        Text { text: date + "  " + time }
+    }
+}

@@ -186,8 +186,8 @@ impl Shell {
         self.0.wake.wake();
     }
 
-    /// Runs until [`Self::quit`], or until the last surface closes while no
-    /// [`Self::each_output`] waits for outputs.
+    /// Runs until [`Self::quit`], or until the last surface closes while
+    /// nothing ([`Self::each_output`], [`Self::on_outputs`]) waits for outputs.
     pub fn run(&self) -> Result<()> {
         while self.dispatch(None)? {}
         Ok(())
@@ -263,7 +263,9 @@ impl Shell {
 
     fn finished(&self) -> bool {
         self.0.quit.get()
-            || (self.0.runtime.borrow().entries.is_empty() && self.0.per_output.borrow().is_empty())
+            || (self.0.runtime.borrow().entries.is_empty()
+                && self.0.per_output.borrow().is_empty()
+                && self.0.on_outputs.borrow().is_empty())
     }
 
     fn uis(&self) -> Vec<Rc<Ui>> {

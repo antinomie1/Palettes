@@ -1,0 +1,18 @@
+// am3's Material 3 controls in a panel: `cargo run -p palettes --features am3 -- examples/material.aegle`
+use "palettes.aegle"
+
+Panel {
+    edge: bottom
+    size: 72dp
+    span: 520dp
+    offset: 8dp
+    state volume: float = 0.0
+    state time: string = ""
+    Row {
+        gap: 12dp
+        padding: 12dp
+        MdButton { text: time; style: tonal }
+        MdButton { text: "Terminal"; style: filled; on clicked { host.spawn("foot") } }
+        MdButton { text: str(int(volume * 100.0)) + "%"; style: outlined; on clicked { host.toggle_mute() } }
+    }
+}
