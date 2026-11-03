@@ -32,10 +32,16 @@ Markup exposure of what aegle already draws or animates (aegle-loader, aegle-mar
 
 New scene primitives, on every aegle renderer:
 
-- [ ] Per-corner radius
-- [ ] Inset shadow
-- [ ] Cut: a shape that punches a hole through what lies beneath
-- [ ] Custom fragment shaders (uv, size, time, values); frames only while `time` is used
+- [x] Per-corner radius: `corners: [bottom_left, bottom_right]`; input and blur regions follow
+- [x] Inset shadow: `inset_shadow: [x, y, blur, spread, color]`
+- [x] Cut: `cut: true` punches a hole through what lies beneath
+- [ ] Input and blur regions leave out cut holes
+- [ ] Custom fragment shaders (uv, size, time, values); frames only while `time` is used  ← next
+
+Paused 2026-11-03 after the cut. Local only, not pushed: aegle aa231e3..3379712 and
+Palettes 255d28d..HEAD. Palettes builds against ../aegle through an uncommitted
+`[patch]`; after pushing aegle, drop it, `cargo update` the aegle crates and commit
+Cargo.lock.
 
 Services beyond the ones below: bluetooth, CPU and memory, app launcher entries,
 a palette picked from the wallpaper, blurred image backgrounds.

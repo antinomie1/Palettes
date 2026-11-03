@@ -52,6 +52,17 @@ Panel {
 
 Input follows the same shape: clicks around a rounded panel's corners reach what is below. `blur` follows the panel's bounds, `radius`, `corners` and visibility. It needs a compositor with ext-background-effect-v1 (KWin 6, Pastel with `blur` on); elsewhere the panel is only translucent. Pastel blurs the wallpaper and layers below a panel, not windows, when `blur-xray` is on. `backdrop_blur` on a control blurs what the panel itself draws beneath that control. `shadow` draws inside the surface, so give it room with `padding`. See `examples/glass.aegle`.
 
+### Holes and inner shadows
+
+```text
+Panel {
+    inset_shadow: [0dp, 3dp, 6dp, 0dp, #00000080]   // pressed in; the blur must be positive
+    Column { width: 48dp; height: 48dp; radius: 24dp; cut: true }  // the desktop shows through
+}
+```
+
+`cut: true` paints a hole of the element's shape instead of its background; its border and content still draw. The hole still takes input and, with `blur`, is still blurred.
+
 ### Image backgrounds
 
 An `Image` with `inset: 0dp` leaves the layout and fills the panel; `fit: cover` crops it to the panel's shape when it has the same `radius`:
