@@ -286,6 +286,18 @@ impl Shell {
                 runtime.set_preferences(preferences);
                 Ok(())
             }
+            Event::Drag {
+                window,
+                seat,
+                position,
+            } => {
+                let runtime = &mut *runtime;
+                if let Some(entry) = runtime.entries.iter().find(|e| e.id == window) {
+                    let accept = entry.ui.drag_motion(position);
+                    runtime.platform.accept_drag(window, seat, accept)?;
+                }
+                Ok(())
+            }
             Event::Close { window } => {
                 // The compositor closed it, as it does for a popup dismissed by
                 // a click elsewhere or a layer on an unplugged output.

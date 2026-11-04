@@ -74,7 +74,7 @@ cargo run --release -p palettes --example bar
 
 | Crate | Purpose |
 |---|---|
-| `palettes-wayland` | Wayland client for layer surfaces, popups, outputs and input (compose, input methods, clipboard); aegle's platform contract |
+| `palettes-wayland` | Wayland client for layer surfaces, popups, outputs and input (compose, input methods, clipboard, drag and drop); aegle's platform contract |
 | `palettes-shell` | `Shell` and `Surface`: aegle UI trees on shell surfaces, Vulkan presentation |
 | `palettes-clock` | Local time formatting, realtime ticks |
 | `palettes-workspace` | Compositor-neutral workspaces and windows; Pastel backend |

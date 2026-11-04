@@ -42,38 +42,12 @@ fn desktop_theme() -> Option<String> {
     if let Ok(theme) = std::env::var("PALETTES_ICON_THEME") {
         return Some(theme);
     }
-    let config = crate::config_home()?;
-    let read = |path: PathBuf, group: &str, key: &str| {
-        let text = std::fs::read_to_string(path).ok()?;
-        crate::ini_group(&text, group)
-            .find(|(k, _)| *k == key)
-            .map(|(_, v)| v.to_owned())
-    };
-    read(config.join("kdeglobals"), "Icons", "Theme")
-        .or_else(|| {
-            read(
-                config.join("gtk-4.0/settings.ini"),
-                "Settings",
-                "gtk-icon-theme-name",
-            )
-        })
-        .or_else(|| {
-            read(
-                config.join("gtk-3.0/settings.ini"),
-                "Settings",
-                "gtk-icon-theme-name",
-            )
-        })
-        // Desktops whose default theme is implicit.
-        .or_else(|| {
-            let desktop = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
-            let default = match () {
-                _ if desktop.contains("KDE") => "breeze",
-                _ if desktop.contains("GNOME") => "Adwaita",
-                _ => return None,
-            };
-            Some(default.into())
-        })
+    crate::desktop::setting(&[
+        ("kdeglobals", "Icons", "Theme"),
+        ("gtk-4.0/settings.ini", "Settings", "gtk-icon-theme-name"),
+        ("gtk-3.0/settings.ini", "Settings", "gtk-icon-theme-name"),
+    ])
+    .or_else(|| crate::desktop::default_for_desktop("breeze", "Adwaita"))
 }
 
 impl Default for Icons {

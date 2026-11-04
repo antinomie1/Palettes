@@ -1,6 +1,9 @@
 //! Cursor images from the xcursor theme, for compositors without
-//! cursor-shape-v1. The theme (`XCURSOR_THEME`, `XCURSOR_SIZE`) loads on
-//! first use, once per integer scale.
+//! cursor-shape-v1. The theme is the desktop's
+//! ([`palettes_assets::cursor_theme`]), loaded on first use, once per
+//! integer scale. Animated cursors show their first frame: none of the
+//! shapes aegle asks for (no busy or progress cursors) animate in common
+//! themes, and a frame timer would wake an idle shell.
 
 use aegle_platform::{Cursor, WindowId};
 use wayland_client::{
@@ -38,15 +41,7 @@ pub(crate) struct Themes {
 
 impl Themes {
     pub fn new(connection: Connection, shm: WlShm) -> Self {
-        let name = std::env::var("XCURSOR_THEME")
-            .ok()
-            .filter(|n| !n.is_empty())
-            .unwrap_or_else(|| "default".into());
-        let size = std::env::var("XCURSOR_SIZE")
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .filter(|s| *s > 0)
-            .unwrap_or(24);
+        let (name, size) = palettes_assets::cursor_theme();
         Self {
             connection,
             shm,

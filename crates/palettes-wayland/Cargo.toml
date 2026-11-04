@@ -11,6 +11,7 @@ repository.workspace = true
 aegle-platform.workspace = true
 aegle-portal.workspace = true
 aegle-types = { workspace = true, features = ["std"] }
+palettes-assets.workspace = true
 raw-window-handle.workspace = true
 rustix = { version = "1", features = ["event", "pipe", "std"] }
 wayland-client.workspace = true

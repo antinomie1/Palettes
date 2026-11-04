@@ -194,9 +194,7 @@ impl Runtime {
         for entry in &mut self.entries {
             entry.ui.advance_animations(now)?;
             // Pastes answered at once land before this refresh records them.
-            crate::input::sync_text(&mut self.platform, entry);
-            // No drag and drop: drop requests rather than queue them.
-            let _ = entry.ui.take_drag();
+            crate::input::sync_requests(&mut self.platform, entry);
             if entry.ui.refresh()? {
                 self.platform.request_redraw(entry.id)?;
             }

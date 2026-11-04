@@ -121,7 +121,7 @@ impl State {
             let seat = registry.bind::<WlSeat, _, _>(name, version.min(7), &self.qh, name);
             let id = aegle_platform::SeatId(self.next_seat);
             self.next_seat += 1;
-            self.clipboard.add_seat(&seat, name, &self.qh);
+            self.clipboard.add_seat(&seat, id, name, &self.qh);
             self.ime.add_seat(&seat, id, name, &self.qh);
             self.seats.push(Seat::new(name, id, seat));
         }

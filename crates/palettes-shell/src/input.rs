@@ -1,5 +1,5 @@
-//! Platform input into a surface's tree, and the tree's clipboard and input
-//! method requests back to the platform. Each surface has one focus domain,
+//! Platform input into a surface's tree, and the tree's clipboard, drag and
+//! input method requests back to the platform. Each surface has one focus domain,
 //! owned by the seat that last focused it.
 
 use crate::runtime::Entry;
@@ -181,6 +181,10 @@ impl Entry {
             Event::Clipboard { seat, text, .. } if self.seat == Some(seat) => {
                 self.ui.paste(&text)?;
             }
+            Event::DragLeave { .. } => self.ui.drag_leave(),
+            Event::Drop { position, data, .. } => {
+                self.ui.drop_data(position, data);
+            }
             Event::Touch {
                 seat,
                 finger,
@@ -200,10 +204,10 @@ impl Entry {
     }
 }
 
-/// Hands the tree's clipboard and input method requests to the platform.
-/// A compositor without them only loses the feature, so failures are
-/// reported, not fatal.
-pub(crate) fn sync_text(platform: &mut Wayland, entry: &Entry) {
+/// Hands the tree's clipboard, drag and input method requests to the
+/// platform. A compositor without them only loses the feature, so failures
+/// are reported, not fatal.
+pub(crate) fn sync_requests(platform: &mut Wayland, entry: &Entry) {
     let seat = entry.seat.unwrap_or(SeatId(0));
     let report = |what: &str, result: aegle_platform::Result<()>| {
         if let Err(error) = result {
@@ -218,6 +222,9 @@ pub(crate) fn sync_text(platform: &mut Wayland, entry: &Entry) {
             report("clipboard", platform.request_clipboard(entry.id, seat));
         }
         None => {}
+    }
+    if let Some(data) = entry.ui.take_drag() {
+        report("drag", platform.start_drag(entry.id, seat, &data));
     }
     let Some(ime) = entry.ui.take_ime_state(aegle_platform::MAX_SURROUNDING) else {
         return;

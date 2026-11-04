@@ -17,9 +17,13 @@ aegle-render-vulkan.workspace = true
 
 [dev-dependencies]
 aegle-widgets.workspace = true
-# A virtual pointer clicks the surfaces in the live shape test.
+# Live tests drive the surfaces from a second client: virtual pointer and
+# keyboard, an input method, a clipboard manager.
+rustix = { version = "1", features = ["fs", "pipe", "std"] }
 wayland-client.workspace = true
+wayland-protocols-misc.workspace = true
 wayland-protocols-wlr.workspace = true
+xkbcommon.workspace = true
 
 [lints]
 workspace = true

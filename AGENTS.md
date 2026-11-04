@@ -16,6 +16,7 @@ surfaces. It works with any wlr-layer-shell compositor and integrates deeply wit
 ```sh
 cargo build                          # needs libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan loader
 cargo test                           # every crate's tests/; live parts skip without WAYLAND_DISPLAY / PipeWire
+cargo test -p palettes-shell --test input -- --ignored   # typing, IME, clipboard, drag; headless Pastel only
 cargo run -p palettes --example bar  # the Rust bar on every output
 cargo run -p palettes -- examples/bar.aegle    # the markup runner; save the file to reload
 cargo run -p palettes -- --check examples/bar.aegle
@@ -42,7 +43,8 @@ crates/
   palettes-assets/     Asset roots, freedesktop icon and desktop-entry lookup, fonts
                        directory, inotify watcher for hot reload. Pure.
   palettes-wayland/    Wayland client for shell surfaces: layer surfaces, popups,
-                       outputs, seat input (compose, text-input-v3, clipboard),
+                       outputs, seat input (compose, text-input-v3, clipboard,
+                       drag and drop),
                        fractional scale, cursor shape or xcursor theme.
                        Implements aegle_platform::{Platform, SurfacePlatform}.
   palettes-shell/      The host: Shell, Panel, Popup, Vulkan presentation, timers,

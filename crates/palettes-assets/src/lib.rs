@@ -8,15 +8,18 @@
 //!   theme and its parents down to `hicolor`, and by application id through
 //!   [`Applications`], the installed desktop entries.
 //! - [`Watcher`]: an inotify thread reporting changed files, for hot reload.
+//! - [`cursor_theme`]: the cursor theme and size the desktop's settings name.
 //!
 //! Lookups are cached; nothing here polls.
 
 mod apps;
+mod desktop;
 mod icons;
 mod roots;
 mod watch;
 
 pub use apps::{Applications, DesktopEntry};
+pub use desktop::cursor_theme;
 pub use icons::Icons;
 pub use roots::Roots;
 pub use watch::Watcher;

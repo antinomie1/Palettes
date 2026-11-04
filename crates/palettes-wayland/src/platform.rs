@@ -287,12 +287,17 @@ impl Platform for Wayland {
         self.flush()
     }
 
-    fn accept_drag(&mut self, _: WindowId, _: SeatId, _: bool) -> Result<()> {
-        Err(Error::Unsupported("drag and drop"))
+    fn accept_drag(&mut self, window: WindowId, seat: SeatId, accept: bool) -> Result<()> {
+        let global = self.state.seat(seat)?.global;
+        self.state.accept_drag(window, global, accept);
+        self.flush()
     }
 
-    fn start_drag(&mut self, _: WindowId, _: SeatId, _: &DragData) -> Result<()> {
-        Err(Error::Unsupported("drag and drop"))
+    fn start_drag(&mut self, window: WindowId, seat: SeatId, data: &DragData) -> Result<()> {
+        let seat = self.state.seat(seat)?;
+        let (global, serial) = (seat.global, seat.last_serial);
+        self.state.start_drag(window, global, serial, data)?;
+        self.flush()
     }
 
     fn present(
