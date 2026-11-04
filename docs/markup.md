@@ -191,6 +191,7 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | `windows` | `list<Toplevel>` | Every window, by workspace |
 | `focused_title`, `focused_app` | `string` | The focused window's title and app id |
 | `focused_icon` | `string` | Its icon file |
+| `output_window` | `Toplevel` | This output's selected window: the focused one on the focused output, elsewhere the one last focused on the output's shown workspace (else its first); `id` 0 for none. Without workspaces (Wayland protocols) the focused window |
 | `keyboard_layout` | `string` | The active keyboard layout's name, such as `English (US)`; Pastel only |
 | `volume`, `mic_volume` | `float` | Default output / input volume, `1.0` = 100 % |
 | `muted`, `mic_muted` | `bool` | |
@@ -243,7 +244,7 @@ Panel {
 
 ```text
 record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
-record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool }
+record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool; floating: bool; fullscreen: bool }
 record App { id: string; name: string; icon: string }
 record AudioDevice { name: string; description: string; volume: float; muted: bool; default: bool }
 record AudioStream { id: int; app: string; icon: string; title: string; volume: float; muted: bool }
@@ -260,7 +261,7 @@ record Memory { used: int; total: int; percent: float }   // MiB; percent 1.0 = 
 record BluetoothDevice { address: string; name: string; icon: string; paired: bool; connected: bool; battery: int }
 ```
 
-`Workspace.active`: shown on its output. `focused`: shown on the focused output.
+`Workspace.active`: shown on its output. `focused`: shown on the focused output. `Toplevel.floating`: out of the tiling layout; `fullscreen`: covers its output (both Pastel only).
 
 `Battery.percent`: `1.0` = 100 %. `state`: `charging`, `discharging`, `full`, `empty`, `pending` or empty. `time`: seconds until empty or full, 0 when unknown. `Player.name`: the bus name after `org.mpris.MediaPlayer2.`; `status`: `Playing`, `Paused` or `Stopped`; `art`: the cover as a local file; `length` in seconds. `Notification.urgency`: 0 low, 1 normal, 2 critical; `icon`: its image, else the app's icon; `actions`: how many buttons it has in `notification_actions`. `TrayItem.status`: `Active`, `Passive` (may be hidden) or `NeedsAttention`. `MenuEntry.toggle`: `checkmark`, `radio` or empty. `Network.kind`: `wifi`, `ethernet`, `vpn`, `other` or empty; `connected`: full connectivity; `strength` 0–100. `BluetoothDevice.battery`: 0–100, or -1 when it reports none.
 

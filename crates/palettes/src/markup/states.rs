@@ -7,7 +7,7 @@ use aegle_loader::{Data, View};
 use aegle_ui::{Node, Result};
 use palettes_audio::AudioState;
 use palettes_shell::Shell;
-use palettes_workspace::Desktop;
+use palettes_workspace::{Desktop, Selection};
 use std::{cell::RefCell, rc::Rc};
 
 /// The record types and documentation of every shell state, imported with
@@ -56,6 +56,22 @@ fn window(w: &palettes_workspace::Window) -> Data {
         string(&icon_of(w)),
         Data::Int(w.workspace as i64),
         Data::Bool(w.focused),
+        Data::Bool(w.floating),
+        Data::Bool(w.fullscreen),
+    ])
+}
+
+/// A `Toplevel` with every field empty, for no window.
+fn no_window() -> Data {
+    record([
+        Data::Int(0),
+        string(""),
+        string(""),
+        string(""),
+        Data::Int(0),
+        Data::Bool(false),
+        Data::Bool(false),
+        Data::Bool(false),
     ])
 }
 
@@ -87,6 +103,7 @@ const DESKTOP: &[&str] = &[
     "focused_title",
     "focused_app",
     "focused_icon",
+    "output_window",
     "keyboard_layout",
 ];
 const AUDIO: &[&str] = &[
@@ -127,7 +144,7 @@ fn stream(s: &palettes_audio::Stream) -> Data {
     ])
 }
 
-fn desktop(view: &View, output: &str, desktop: &Desktop) {
+fn desktop(view: &View, output: &str, desktop: &Desktop, selection: &mut Selection) {
     set(
         view,
         "workspaces",
@@ -147,6 +164,11 @@ fn desktop(view: &View, output: &str, desktop: &Desktop) {
     set(view, "focused_app", string(&field(|w| w.app_id.clone())));
     if view.get("focused_icon").is_some() {
         set(view, "focused_icon", string(&field(icon_of)));
+    }
+    if view.get("output_window").is_some() {
+        selection.update(desktop);
+        let selected = selection.on(desktop, output).map_or_else(no_window, window);
+        set(view, "output_window", selected);
     }
     set(view, "keyboard_layout", string(&desktop.keyboard_layout));
 }
@@ -216,8 +238,10 @@ pub fn bind(shell: &Shell, shared: &Rc<RefCell<View>>, owner: &Node, output: &st
     }
     if declares(view, DESKTOP) {
         let (target, output) = (shared.clone(), output.to_owned());
-        let followed =
-            services::follow_desktop(shell, owner, move |d| desktop(&target.borrow(), &output, d));
+        let mut selection = Selection::default();
+        let followed = services::follow_desktop(shell, owner, move |d| {
+            desktop(&target.borrow(), &output, d, &mut selection)
+        });
         report(followed, "compositor");
     }
     if declares(view, AUDIO) {

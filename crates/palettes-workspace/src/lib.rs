@@ -9,10 +9,12 @@
 //! [`Compositor::focus_workspace`] never block the caller.
 
 mod pastel;
+mod selection;
 mod toplevels;
 mod wayland;
 mod workspaces;
 
+pub use selection::Selection;
 use std::{io, sync::mpsc};
 
 /// Everything a shell shows about the desktop.

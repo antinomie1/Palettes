@@ -16,6 +16,8 @@
 //   state focused_title: string        the focused window's title
 //   state focused_app: string          its app id
 //   state focused_icon: string         its icon file
+//   state output_window: Toplevel      this output's selected window: the focused one, else the one
+//                                      last focused on its shown workspace; id 0 for none
 //   state keyboard_layout: string      the active layout's name, such as "English (US)" (Pastel)
 //   state volume: float                default output volume, 1.0 = 100 %
 //   state muted: bool
@@ -89,7 +91,7 @@
 // actions. `Panel { edge: popup }` opens beside the control under the pointer.
 
 record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
-record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool }
+record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool; floating: bool; fullscreen: bool }
 record App { id: string; name: string; icon: string }
 record AudioDevice { name: string; description: string; volume: float; muted: bool; default: bool }
 record AudioStream { id: int; app: string; icon: string; title: string; volume: float; muted: bool }
