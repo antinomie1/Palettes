@@ -50,6 +50,7 @@ From `palettes msg`, a script function gets each argument as a number or boolean
 | `file(path, function(text))` | Calls back now and whenever the file is saved, with its text (`nil` if it is gone) |
 | `after(seconds, function())` | Calls back once. Returns a handle |
 | `every(seconds, function())` | Calls back every `seconds`. Returns a handle |
+| `palette({colors})` | Makes up to five `#rrggbb` or `#rrggbbaa` colors the palette: tokens `palette.1`–`palette.5` (missing ones take the first) and the `palette` state, as a wallpaper's `palette: true` does; the latest call or image wins |
 | `json.decode(text)`, `json.encode(value)` | JSON to Luau values and back |
 | `dbus.session(name, path)`, `dbus.system(name, path)` | A proxy for an object on a bus; see below |
 | `print(...)` | Writes to standard error, prefixed with the script's name |

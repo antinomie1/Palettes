@@ -15,7 +15,7 @@ A Wayland desktop shell and widget library in Rust: bars, docks, launchers, popu
 - **System services over D-Bus**: battery and power profiles (UPower), media players (MPRIS), a notification server, the system tray with menus (StatusNotifierItem, DBusMenu), Wi-Fi (NetworkManager), bluetooth (BlueZ), the backlight (through logind): `state battery`, `state tray`, `host.wifi_connect(...)`
 - **D-Bus in scripts**: `dbus.system(name, path)` calls methods and follows properties and signals, without blocking the shell
 - **Glass and curves**: rounded, translucent panels with the desktop blurred behind them (`radius`, `background: #1e1e2ea0`, `opacity`, `blur: true`), on compositors with ext-background-effect-v1 such as KWin and Pastel
-- **Wallpapers**: `Panel { edge: background }` with an image up to 4K, optionally blurred; its colors become the palette tokens `palette.1`–`palette.5`
+- **Wallpapers**: `Panel { edge: background }` with an image up to 4K, optionally blurred; its colors become the palette tokens `palette.1`–`palette.5`, which scripts can also set (`palette{...}`), to follow a compositor's colors, say
 - **Lock screen**: `Panel { edge: lock }` locks the session on every output (ext-session-lock-v1); `host.unlock(password)` checks it with PAM
 - **Idle means idle**: nothing runs between changes; services start only when used
 - **Composable**: any aegle control library, such as [am3](https://github.com/antinomie1/am3) (`--features am3`)

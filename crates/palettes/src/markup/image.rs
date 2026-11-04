@@ -80,12 +80,38 @@ pub(crate) fn follow_palette(owner: &Node, mut f: impl FnMut(&[String]) + 'stati
 
 /// Makes `image`'s colors the palette, if they changed.
 fn publish(image: &aegle_ui::scene::Image) -> aegle_ui::Result<()> {
-    let colors = palette(image, PALETTE_SIZE);
+    let colors: Vec<[u8; 4]> = (palette(image, PALETTE_SIZE).into_iter())
+        .map(|[r, g, b]| [r, g, b, 255])
+        .collect();
+    set_palette(&colors)
+}
+
+/// `#rrggbb` or `#rrggbbaa`.
+pub fn parse_color(text: &str) -> Option<[u8; 4]> {
+    let hex = text.strip_prefix('#').filter(|h| h.is_ascii())?;
+    if !matches!(hex.len(), 6 | 8) {
+        return None;
+    }
+    let byte = |i: usize| hex.get(i..i + 2).map(|d| u8::from_str_radix(d, 16));
+    let mut rgba = [255; 4];
+    for (n, channel) in rgba.iter_mut().enumerate().take(hex.len() / 2) {
+        *channel = byte(n * 2)?.ok()?;
+    }
+    Some(rgba)
+}
+
+/// Makes `colors` the palette, if they changed: the tokens, missing ones
+/// taking the first color, and the `palette` state, `#rrggbb` or
+/// `#rrggbbaa` when translucent. Images and scripts' `palette` call this.
+pub(crate) fn set_palette(colors: &[[u8; 4]]) -> aegle_ui::Result<()> {
     let Some(&first) = colors.first() else {
         return Ok(());
     };
     let hex: Vec<String> = (colors.iter())
-        .map(|[r, g, b]| format!("#{r:02x}{g:02x}{b:02x}"))
+        .map(|&[r, g, b, a]| match a {
+            255 => format!("#{r:02x}{g:02x}{b:02x}"),
+            a => format!("#{r:02x}{g:02x}{b:02x}{a:02x}"),
+        })
         .collect();
     let mut followers = PALETTE.with_borrow_mut(|(latest, followers)| {
         if *latest == hex {
@@ -99,8 +125,8 @@ fn publish(image: &aegle_ui::scene::Image) -> aegle_ui::Result<()> {
     };
     if let Some(shell) = SHELL.with_borrow(Clone::clone) {
         for (n, token) in tokens()?.into_iter().enumerate() {
-            let [r, g, b] = colors.get(n).copied().unwrap_or(first);
-            shell.set_color_token(token, Some(Color::rgb(r, g, b)));
+            let [r, g, b, a] = colors.get(n).copied().unwrap_or(first);
+            shell.set_color_token(token, Some(Color::rgba(r, g, b, a)));
         }
     }
     followers.retain_mut(|(owner, follow)| {

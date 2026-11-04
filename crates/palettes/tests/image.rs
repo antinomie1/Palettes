@@ -2,7 +2,7 @@
 //! palettes come from the pixels.
 
 use aegle_ui::scene::Image;
-use palettes::markup::image::{blur, palette, shrink};
+use palettes::markup::image::{blur, palette, parse_color, shrink};
 use palettes_shell::MAX_IMAGE_PIXELS;
 
 #[test]
@@ -87,4 +87,13 @@ fn palettes_list_distinct_colors_most_common_first() {
     let image = Image::new(10, 10, pixels).unwrap();
     assert_eq!(palette(&image, 5), vec![[200, 30, 30], [20, 40, 200]]);
     assert_eq!(palette(&image, 1), vec![[200, 30, 30]]);
+}
+
+#[test]
+fn script_colors_parse_with_or_without_alpha() {
+    assert_eq!(parse_color("#1e2028"), Some([0x1e, 0x20, 0x28, 255]));
+    assert_eq!(parse_color("#a6c8ff80"), Some([0xa6, 0xc8, 0xff, 0x80]));
+    for bad in ["1e2028", "#fff", "#1e20", "#1e2028a", "#gggggg", "#ééé"] {
+        assert_eq!(parse_color(bad), None, "{bad}");
+    }
 }

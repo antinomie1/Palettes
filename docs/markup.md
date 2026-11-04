@@ -112,7 +112,7 @@ Panel {
 
 ### Wallpapers and the palette
 
-A `background` panel with an image is a wallpaper; images up to 3840 × 2400 show at full size, larger ones shrink once. `blur` blurs an image by a radius in its own pixels (cheaply, on a smaller copy). `palette: true` makes the image's main colors the palette: tokens `palette.1` (the most common) to `palette.5`, which any document's color properties can use, and the `palette` state. Until an image sets them they are the theme's accent.
+A `background` panel with an image is a wallpaper; images up to 3840 × 2400 show at full size, larger ones shrink once. `blur` blurs an image by a radius in its own pixels (cheaply, on a smaller copy). `palette: true` makes the image's main colors the palette: tokens `palette.1` (the most common) to `palette.5`, which any document's color properties can use, and the `palette` state. A script's `palette({...})` sets them too, with alpha, so markup can follow colors read from anywhere (a compositor's config, say). Until one of them does they are the theme's accent.
 
 ```text
 // wallpaper.aegle

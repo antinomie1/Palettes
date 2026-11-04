@@ -118,6 +118,22 @@ pub(super) fn environment(lua: &Lua, id: u64, path: &Path) -> mlua::Result<Table
             function.call::<()>(std::fs::read_to_string(&path).ok())
         })?,
     )?;
+    base.set(
+        "palette",
+        lua.create_function(|_, colors: Vec<String>| {
+            let parsed = (colors.iter())
+                .take(crate::markup::image::PALETTE_SIZE)
+                .map(|c| {
+                    crate::markup::image::parse_color(c)
+                        .ok_or_else(|| runtime_error(format!("`{c}` is not #rrggbb or #rrggbbaa")))
+                })
+                .collect::<mlua::Result<Vec<_>>>()?;
+            if parsed.is_empty() {
+                return Err(runtime_error("palette needs a color"));
+            }
+            crate::markup::image::set_palette(&parsed).map_err(runtime_error)
+        })?,
+    )?;
     base.set("json", json(lua)?)?;
     base.set("dbus", super::dbus::table(lua, id)?)?;
     let name = path
