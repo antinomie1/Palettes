@@ -240,6 +240,7 @@ impl Runtime {
             if entry.ui.refresh()? {
                 self.platform.request_redraw(entry.id)?;
             }
+            crate::input::sync_primary(&mut self.platform, entry);
             fit(&mut self.platform, entry)?;
             if let Some(change) = aegle_widgets::take_tooltip(&entry.ui) {
                 tooltips.push((entry.id, change));

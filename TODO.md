@@ -48,7 +48,7 @@ Beyond the services below: blurred image backgrounds (done: `Image { blur }`).
 - [x] text-input-v3 (IME), clipboard and compose (dead keys) in palettes-wayland
 - [x] Cursor without cursor-shape-v1 (cursor theme loading, KDE/GTK settings)
 - [x] Drag and drop of text and files between surfaces and clients
-- [ ] Primary selection (middle-click paste): needs an aegle platform API first
+- [x] Primary selection (middle-click paste), with `Platform::set_primary` / `request_primary` in aegle
 - [x] D-Bus services: battery and power profiles, MPRIS, notification server, system tray
       with DBusMenu, NetworkManager Wi-Fi, BlueZ; `dbus` for scripts
 - [x] Brightness, keyboard layout, CPU and memory, wallpaper palette as built-in states

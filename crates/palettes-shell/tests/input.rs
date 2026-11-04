@@ -167,6 +167,15 @@ impl Driver {
         self.pump();
     }
 
+    fn middle_click(&mut self) {
+        for state in [ButtonState::Pressed, ButtonState::Released] {
+            self.time += 10;
+            self.pointer.button(self.time, 0x112, state);
+            self.pointer.frame();
+        }
+        self.connection.flush().unwrap();
+    }
+
     /// Reads the clipboard on a thread, as the other client serves it from
     /// the shell's loop.
     fn read_clipboard(&mut self) -> Option<mpsc::Receiver<String>> {
@@ -272,6 +281,29 @@ fn typing_composing_input_methods_and_the_clipboard() {
         copied.as_deref(),
         Some("aéa中XY"),
         "copied for another client"
+    );
+
+    // Selecting made it the primary selection: a middle click in another
+    // field pastes it there.
+    let below = shell.panel(PanelOptions::bottom(48)).unwrap();
+    let other = below.text_field("");
+    other.set_grow(1.0);
+    let output = shell.outputs()[0].clone();
+    let extent = (
+        (output.size.width as f32 / output.scale) as u32,
+        (output.size.height as f32 / output.scale) as u32,
+    );
+    run(&shell, &mut driver, Duration::from_millis(300), |_| false);
+    driver.point((extent.0 / 2, extent.1 - 24), extent);
+    run(&shell, &mut driver, Duration::from_millis(200), |_| false);
+    driver.middle_click();
+    run(&shell, &mut driver, Duration::from_secs(2), |_| {
+        !other.text().is_empty()
+    });
+    assert_eq!(
+        other.text(),
+        "aéa中XY",
+        "a middle click pastes the primary selection"
     );
 }
 

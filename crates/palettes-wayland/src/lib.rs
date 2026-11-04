@@ -5,7 +5,8 @@
 //! needs: wlr layer surfaces on chosen outputs, xdg popups attached to them or
 //! to each other, outputs with names and fractional scales, and seat input
 //! (pointer, keyboard through xkbcommon with compose sequences and key repeat,
-//! touch), input methods through text-input-v3, the clipboard as text, and
+//! touch), input methods through text-input-v3, the clipboard and the
+//! primary selection as text, and
 //! drag and drop of text and files. There are no
 //! ordinary toplevel windows and no software buffers: frames are presented by
 //! a GPU renderer through [`WindowSurface`] leases, paced by frame callbacks.
@@ -28,6 +29,7 @@ mod lock;
 mod output;
 mod platform;
 mod pointer;
+mod primary;
 mod region;
 mod state;
 mod window;

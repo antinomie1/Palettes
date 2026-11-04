@@ -64,6 +64,7 @@ pub(crate) struct State {
     /// Cursor images, where the compositor has no cursor-shape-v1.
     pub themes: Option<Themes>,
     pub lock: crate::lock::Lock,
+    pub primary: crate::primary::Primary,
 }
 
 impl State {
@@ -108,6 +109,7 @@ impl State {
             ime,
             themes,
             lock: crate::lock::Lock::new(globals.bind(&qh_lock, 1..=1, ()).ok()),
+            primary: crate::primary::Primary::new(globals.bind(&qh_lock, 1..=1, ()).ok()),
         };
         let registry = globals.registry();
         for global in globals.contents().clone_list() {
@@ -127,6 +129,7 @@ impl State {
             let id = aegle_platform::SeatId(self.next_seat);
             self.next_seat += 1;
             self.clipboard.add_seat(&seat, id, name, &self.qh);
+            self.primary.add_seat(&seat, name, &self.qh);
             self.ime.add_seat(&seat, id, name, &self.qh);
             self.seats.push(Seat::new(name, id, seat));
         }
@@ -139,6 +142,7 @@ impl State {
         }
         if let Some(index) = self.seats.iter().position(|s| s.global == name) {
             self.clipboard.remove_seat(name);
+            self.primary.remove_seat(name);
             self.ime.remove_seat(name);
             self.seats.remove(index).release();
         }

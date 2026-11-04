@@ -53,7 +53,7 @@ crates/
                        `Link` for scripts.
   palettes-wayland/    Wayland client for shell surfaces: layer surfaces, popups,
                        outputs, seat input (compose, text-input-v3, clipboard,
-                       drag and drop),
+                       primary selection, drag and drop), session lock,
                        fractional scale, cursor shape or xcursor theme.
                        Implements aegle_platform::{Platform, SurfacePlatform}.
   palettes-shell/      The host: Shell, Panel, Popup, Vulkan presentation, timers,

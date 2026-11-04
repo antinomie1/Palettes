@@ -182,6 +182,8 @@ impl Entry {
             Event::Clipboard { seat, text, .. } if self.seat == Some(seat) => {
                 self.ui.paste(&text)?;
             }
+            // Asked for by a middle click here, which needs no keyboard.
+            Event::Primary { text, .. } => self.ui.paste(&text)?,
             Event::DragLeave { .. } => self.ui.drag_leave(),
             Event::Drop { position, data, .. } => {
                 self.ui.drop_data(position, data);
@@ -208,6 +210,21 @@ impl Entry {
 /// Hands the tree's clipboard, drag and input method requests to the
 /// platform. A compositor without them only loses the feature, so failures
 /// are reported, not fatal.
+/// Offers what an editor selected as the primary selection, or reads it for
+/// a middle click; run after a refresh, which notices selections.
+pub(crate) fn sync_primary(platform: &mut Wayland, entry: &Entry) {
+    let seat = entry.seat.unwrap_or(SeatId(0));
+    while let Some(request) = entry.ui.take_primary() {
+        let result = match request {
+            aegle_ui::PrimaryRequest::Write(text) => platform.set_primary(entry.id, seat, &text),
+            aegle_ui::PrimaryRequest::Read => platform.request_primary(entry.id, seat),
+        };
+        if let Err(error) = result {
+            eprintln!("palettes: primary selection: {error}");
+        }
+    }
+}
+
 pub(crate) fn sync_requests(platform: &mut Wayland, entry: &Entry) {
     let seat = entry.seat.unwrap_or(SeatId(0));
     let report = |what: &str, result: aegle_platform::Result<()>| {

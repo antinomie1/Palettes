@@ -313,6 +313,21 @@ impl Platform for Wayland {
         self.flush()
     }
 
+    fn set_primary(&mut self, window: WindowId, seat: SeatId, text: &str) -> Result<()> {
+        self.state.window(window).ok_or(Error::InvalidWindow)?;
+        let seat = self.state.seat(seat)?;
+        let (global, serial) = (seat.global, seat.last_serial);
+        self.state.set_primary(global, serial, text);
+        self.flush()
+    }
+
+    fn request_primary(&mut self, window: WindowId, seat: SeatId) -> Result<()> {
+        self.state.window(window).ok_or(Error::InvalidWindow)?;
+        let global = self.state.seat(seat)?.global;
+        self.state.request_primary(window, seat, global)?;
+        self.flush()
+    }
+
     fn request_clipboard(&mut self, window: WindowId, seat: SeatId) -> Result<()> {
         self.state.window(window).ok_or(Error::InvalidWindow)?;
         let global = self.state.seat(seat)?.global;

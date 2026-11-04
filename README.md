@@ -9,6 +9,7 @@ A Wayland desktop shell and widget library in Rust: bars, docks, launchers, popu
 - **Luau scripts**: `bar.luau` beside `bar.aegle` fills states, defines actions, runs commands, timers and file watches; saving reloads it
 - **Popups**: `Panel { edge: popup }` opens beside the clicked control, sized to its content, and closes with a click elsewhere; tooltips leave the bar as popups
 - **Command line**: `palettes msg toggle launcher.aegle` or any action, for compositor keybindings
+- **Text input**: compose keys, input methods, clipboard, primary selection (middle-click paste), drag and drop
 - **Automatic assets**: theme icons by name or app id (SVG included), fonts from `fonts/`, paths relative to the document
 - **Services**: clock, workspaces and windows (Pastel IPC; on other compositors through ext-workspace-v1 and wlr-foreign-toplevel-management), PipeWire devices, default switching, per-application volume and peak levels, processor and memory use, installed applications
 - **System services over D-Bus**: battery and power profiles (UPower), media players (MPRIS), a notification server, the system tray with menus (StatusNotifierItem, DBusMenu), Wi-Fi (NetworkManager), bluetooth (BlueZ), the backlight (through logind): `state battery`, `state tray`, `host.wifi_connect(...)`

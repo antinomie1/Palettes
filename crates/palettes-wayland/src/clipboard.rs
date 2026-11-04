@@ -44,6 +44,8 @@ pub(crate) enum Arrived {
         window: WindowId,
         seat: SeatId,
         text: String,
+        /// From the primary selection.
+        primary: bool,
     },
     Drop {
         window: WindowId,
@@ -88,7 +90,7 @@ pub(crate) fn offered(
 }
 
 /// Serves `data` into a pipe a client asked for.
-fn serve(fd: OwnedFd, data: Arc<[u8]>) {
+pub(crate) fn serve(fd: OwnedFd, data: Arc<[u8]>) {
     let _ = std::thread::Builder::new()
         .name("palettes-clipboard".into())
         .spawn(move || drop(std::fs::File::from(fd).write_all(&data)));
@@ -192,7 +194,13 @@ impl Clipboard {
         };
         self.read(offer, mime, move |bytes| {
             let text = bytes.and_then(|b| String::from_utf8(b).ok())?;
-            Some(Arrived::Paste { window, seat, text })
+            let primary = false;
+            Some(Arrived::Paste {
+                window,
+                seat,
+                text,
+                primary,
+            })
         })
     }
 
@@ -204,11 +212,21 @@ impl Clipboard {
         mime: &str,
         done: impl FnOnce(Option<Vec<u8>>) -> Option<Arrived> + Send + 'static,
     ) -> Result<(), Error> {
+        self.read_pipe(|write| offer.receive(mime.into(), write), done)
+    }
+
+    /// [`Self::read`] for any offer: `receive` asks its source to write
+    /// into the pipe end it is given.
+    pub fn read_pipe(
+        &self,
+        receive: impl FnOnce(std::os::fd::BorrowedFd<'_>),
+        done: impl FnOnce(Option<Vec<u8>>) -> Option<Arrived> + Send + 'static,
+    ) -> Result<(), Error> {
         let (read, write) =
             rustix::pipe::pipe_with(rustix::pipe::PipeFlags::CLOEXEC).map_err(Error::backend)?;
         // The request carries a duplicate of `write`; ours closes now, so
         // the read ends when the source closes its copy.
-        offer.receive(mime.into(), write.as_fd());
+        receive(write.as_fd());
         drop(write);
         let (arrived, wake) = (self.arrived.0.clone(), self.wake.clone());
         std::thread::Builder::new()
@@ -234,8 +252,16 @@ impl Clipboard {
     pub fn deliver(&self, events: &mut VecDeque<Event>, live: impl Fn(WindowId) -> bool) {
         for arrived in self.arrived.1.try_iter() {
             match arrived {
-                Arrived::Paste { window, seat, text } if live(window) => {
-                    events.push_back(Event::Clipboard { window, seat, text });
+                Arrived::Paste {
+                    window,
+                    seat,
+                    text,
+                    primary,
+                } if live(window) => {
+                    events.push_back(match primary {
+                        true => Event::Primary { window, seat, text },
+                        false => Event::Clipboard { window, seat, text },
+                    });
                 }
                 Arrived::Paste { .. } => {}
                 Arrived::Drop {
