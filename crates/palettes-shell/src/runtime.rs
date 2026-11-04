@@ -16,9 +16,10 @@ use aegle_widgets::HostTooltip;
 use palettes_wayland::{Wayland, WindowSurface};
 use std::{cell::RefCell, rc::Rc, time::Instant};
 
-/// Pixels of the largest image a surface uploads: 4 MiB of RGBA, which the
-/// default memory budget holds beside the surface's text.
-pub const MAX_IMAGE_PIXELS: u32 = 1024 * 1024;
+/// Pixels of the largest image a surface uploads: a 3840 × 2400 wallpaper,
+/// 35 MiB of RGBA, which the default memory budget holds beside the
+/// surface's text. Budgets are limits: smaller images take what they need.
+pub const MAX_IMAGE_PIXELS: u32 = 3840 * 2400;
 
 /// One such image plus aegle's default 1 MiB for the frame's glyphs.
 const UPLOAD_BYTES: usize = MAX_IMAGE_PIXELS as usize * 4 + 1024 * 1024;
@@ -59,6 +60,8 @@ pub(crate) struct Runtime {
     pub closers: Vec<(WindowId, Box<dyn FnOnce()>)>,
     /// Closers of closed surfaces, run outside the runtime's borrow.
     pub closed: Vec<Box<dyn FnOnce()>>,
+    /// Color tokens every surface takes.
+    pub tokens: Vec<(aegle_ui::Token<Color>, Color)>,
 }
 
 /// Scales the UI's logical scenes to device pixels.
@@ -120,6 +123,9 @@ impl Runtime {
             .bind_color(ColorSlot::Background, Theme::BACKGROUND);
         // A bar is too small to hold its tooltips: they become popups.
         aegle_widgets::host_tooltips(&ui)?;
+        for &(token, color) in &self.tokens {
+            ui.set_token(token, color);
+        }
         let id = self.platform.create_window(options)?;
         let renderer = match self.presenter(id) {
             Ok(renderer) => renderer,

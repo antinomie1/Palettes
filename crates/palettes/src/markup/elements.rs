@@ -314,6 +314,14 @@ fn show_shader(view: &ShaderView, source: &str) {
     crate::markup::shader::show(view, source);
 }
 
+fn image_blur(view: &ImageView, radius: f64) {
+    crate::markup::image::restyle(view, |look| look.blur = radius as f32, true);
+}
+
+fn image_palette(view: &ImageView, palette: bool) {
+    crate::markup::image::restyle(view, |look| look.palette = palette, true);
+}
+
 fn fit(name: &str) -> Fit {
     match name {
         "fill" => Fit::Fill,
@@ -386,10 +394,14 @@ element! {
     }
     /// An image file relative to the asset roots, placed by `fit`. In a
     /// `Stack` with `fit: cover` and a `radius`, it is a rounded background.
+    /// `blur` blurs it by a radius in its own pixels; `palette: true` makes
+    /// its main colors the shell's palette.
     pub Image(ImageView) {
         create |parent| parent.image_view();
         set source: line => show_image;
         set fit: choice(fill, contain, cover) => |view, name| view.set_fit(fit(name));
+        set blur: float(0, 1000) => image_blur;
+        set palette: bool => image_palette;
         event failed => |view, run| view.on_error(move |_| run());
         get error: string => |view| view.error().unwrap_or_default();
     }

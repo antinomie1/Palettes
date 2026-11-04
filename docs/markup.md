@@ -97,6 +97,20 @@ Panel {
 }
 ```
 
+### Wallpapers and the palette
+
+A `background` panel with an image is a wallpaper; images up to 3840 × 2400 show at full size, larger ones shrink once. `blur` blurs an image by a radius in its own pixels (cheaply, on a smaller copy). `palette: true` makes the image's main colors the palette: tokens `palette.1` (the most common) to `palette.5`, which any document's color properties can use, and the `palette` state. Until an image sets them they are the theme's accent.
+
+```text
+// wallpaper.aegle
+Panel {
+    edge: background
+    Image { source: "wallpaper.jpg"; fit: cover; inset: 0dp; blur: 12; palette: true }
+}
+// bar.aegle
+Panel { background: token("palette.1"); Text { text: time; foreground: token("palette.3") } }
+```
+
 ### Shaders
 
 A `Shader` fills itself with a WGSL fragment program, following its `radius` and `corners`. Like an `Image` it has no size of its own; with `inset: 0dp` in a `Stack` it is a panel's background:
@@ -141,7 +155,7 @@ Text { text: time; opacity_animation: [[0.5, 1], 800ms, ease_in_out, alternate] 
 
 ## Image
 
-`Image { source: "wall.png"; fit: cover }`. `source` resolves like other assets; `fit` is `fill`, `contain` or `cover`. Images larger than one megapixel are shrunk once when loaded, so a surface can upload them. Saving the file, or replacing it, shows the new image; icons follow their files the same way. `on failed` runs when a file does not load, with `self.error`.
+`Image { source: "wall.png"; fit: cover }`. `source` resolves like other assets; `fit` is `fill`, `contain` or `cover`; `blur` and `palette` are described under [Wallpapers and the palette](#wallpapers-and-the-palette). Images larger than 3840 × 2400 are shrunk once when loaded, so a surface can upload them. Saving the file, or replacing it, shows the new image; icons follow their files the same way. `on failed` runs when a file does not load, with `self.error`.
 
 ## Icon
 
@@ -166,6 +180,7 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | `muted`, `mic_muted` | `bool` | |
 | `audio_device` | `string` | Default output's description |
 | `applications` | `list<App>` | Launchable applications, sorted by name |
+| `palette` | `list<string>` | The palette as `#rrggbb`, from the latest `Image { palette: true }`, most common first |
 | `battery` | `Battery` | UPower's display device and whether the system runs on battery |
 | `power_profile` | `string` | `power-saver`, `balanced` or `performance` (power-profiles-daemon) |
 | `power_profiles` | `list<string>` | The profiles to choose from |

@@ -40,7 +40,7 @@ New scene primitives, on every aegle renderer:
 
 Every effect above is done (2026-11-04); shaders recompile when their file is saved.
 
-Beyond the services below: blurred image backgrounds.
+Beyond the services below: blurred image backgrounds (done: `Image { blur }`).
 
 ### Platform
 
@@ -54,7 +54,7 @@ Beyond the services below: blurred image backgrounds.
 - [ ] Brightness, keyboard layout, CPU and memory, wallpaper palette as built-in states
 - [ ] PipeWire: device lists, default device switching, per-app volume, peak levels
 - [ ] Session lock surface (ext-session-lock-v1)
-- [ ] Wallpaper layer with images
+- [x] Wallpaper layer with images, and its palette as tokens and a state
 - [x] `palettes msg <action>` over a socket, so compositor keybindings open launchers
 - [x] Popups from markup (`edge: popup`), `host.open` / `host.close`
 - [x] Icons rasterized at the surface's scale rather than a fixed 64 px

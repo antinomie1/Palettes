@@ -20,6 +20,8 @@
 //   state mic_muted: bool
 //   state audio_device: string         default output's description
 //   state applications: list<App>      launchable applications, by name
+//   state palette: list<string>        "#rrggbb" colors of the latest `Image { palette: true }`;
+//                                      also tokens `palette.1` to `palette.5`
 //   state battery: Battery              UPower's battery; percent 1.0 = 100 %
 //   state power_profile: string         "power-saver", "balanced" or "performance"
 //   state power_profiles: list<string>  the profiles to choose from

@@ -31,6 +31,12 @@ impl<V: Clone + Deref<Target = Node>> Followers<V> {
         (self.0.borrow_mut()).retain(|(v, _)| v.is_alive() && v.id() != view.id());
     }
 
+    /// The file `view` shows.
+    pub fn path_of(&self, view: &V) -> Option<PathBuf> {
+        let shown = self.0.borrow();
+        (shown.iter().find(|(v, _)| v.id() == view.id())).map(|(_, p)| p.clone())
+    }
+
     /// The live views showing `path`.
     pub fn of(&self, path: &Path) -> Vec<V> {
         let mut shown = self.0.borrow_mut();

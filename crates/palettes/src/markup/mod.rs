@@ -14,6 +14,7 @@ pub mod elements;
 mod follow;
 pub mod image;
 pub(crate) mod link;
+mod pixels;
 mod popup;
 mod shader;
 pub mod states;
@@ -347,6 +348,7 @@ fn changed(path: &Path) -> Result<()> {
 /// Parses and checks a document and its imports without opening it.
 pub fn check(path: &Path) -> Result<()> {
     actions::declare();
+    image::start(None)?;
     let script = crate::script::beside(path);
     if let Some(script) = &script {
         crate::script::check(script)?;
@@ -435,6 +437,7 @@ impl Documents {
     /// library's: `elements::elements()` extended with `.with::<E>()`.
     pub fn with(shell: Shell, elements: Elements) -> Result<Self> {
         actions::register(&shell);
+        image::start(Some(&shell))?;
         crate::script::start(&shell)?;
         crate::ipc::serve(&shell);
         let reloads = shell.channel(|_, path: PathBuf| changed(&path));

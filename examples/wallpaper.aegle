@@ -1,0 +1,9 @@
+// A wallpaper on every output, softly blurred; its colors become the
+// palette other documents use as `token("palette.1")` to `token("palette.5")`.
+// Put the picture at ~/.config/palettes/wallpaper.jpg, or next to this file.
+use "palettes.aegle"
+
+Panel {
+    edge: background
+    Image { source: "wallpaper.jpg"; fit: cover; inset: 0dp; blur: 12; palette: true }
+}

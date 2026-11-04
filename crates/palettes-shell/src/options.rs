@@ -14,7 +14,8 @@ pub struct ShellOptions {
     pub dark_theme: Option<Theme>,
     /// Transition given to interactive controls; `None` for none.
     pub transition: Option<Transition>,
-    /// Bytes of Vulkan device memory each surface may allocate.
+    /// Bytes of Vulkan device memory each surface may allocate: a limit,
+    /// by default room for one wallpaper-sized image beside the text.
     pub memory_budget: u64,
 }
 
@@ -25,7 +26,7 @@ impl Default for ShellOptions {
             theme: Theme::default(),
             dark_theme: Some(Theme::dark()),
             transition: Some(Transition::default()),
-            memory_budget: 16 * 1024 * 1024,
+            memory_budget: 64 * 1024 * 1024,
         }
     }
 }

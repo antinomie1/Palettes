@@ -14,6 +14,7 @@ Rust 编写的 Wayland 桌面 shell 与桌面小控件库：状态栏、程序�
 - **D-Bus 系统服务**：电池与电源模式（UPower）、媒体播放（MPRIS）、通知服务器、带菜单的系统托盘（StatusNotifierItem、DBusMenu）、Wi-Fi（NetworkManager）、蓝牙（BlueZ）：`state battery`、`state tray`、`host.wifi_connect(...)`
 - **脚本中的 D-Bus**：`dbus.system(name, path)` 调用方法、跟随属性与信号，不阻塞 shell
 - **毛玻璃与圆角**：圆角、半透明面板，并让混成器模糊其后的桌面（`radius`、`background: #1e1e2ea0`、`opacity`、`blur: true`），需混成器支持 ext-background-effect-v1，如 KWin 与 Pastel
+- **壁纸**：`Panel { edge: background }` 中放入最高 4K 的图片，可模糊；其主色成为调色板令牌 `palette.1`–`palette.5`
 - **空闲即静止**：无变化时不运行任何代码；服务在首次使用时才启动
 - **可组合**：可与任何 aegle 控件库结合，例如 [am3](https://github.com/antinomie1/am3)（`--features am3`）
 

@@ -179,6 +179,16 @@ pub fn bind(shell: &Shell, shared: &Rc<RefCell<View>>, owner: &Node, output: &st
         });
         set(view, "applications", list(items));
     }
+    if view.get("palette").is_some() {
+        let target = shared.clone();
+        super::image::follow_palette(owner, move |colors| {
+            set(
+                &target.borrow(),
+                "palette",
+                list(colors.iter().map(|c| string(c))),
+            )
+        });
+    }
     super::system::bind(shell, shared, owner)
 }
 

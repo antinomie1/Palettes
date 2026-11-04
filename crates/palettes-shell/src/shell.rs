@@ -80,6 +80,7 @@ impl Shell {
             clock: Instant::now(),
             closers: Vec::new(),
             closed: Vec::new(),
+            tokens: Vec::new(),
         };
         Ok(Self(Rc::new(Inner {
             runtime: RefCell::new(runtime),
@@ -164,6 +165,24 @@ impl Shell {
         handler: impl FnMut(Box<dyn std::error::Error>) -> Result<()> + 'static,
     ) {
         *self.0.on_error.borrow_mut() = Some(Box::new(handler));
+    }
+
+    /// Gives a color token, such as one from `aegle_ui::register_token`,
+    /// `color` on every surface, now and opened later; `None` returns it to
+    /// its default.
+    pub fn set_color_token(
+        &self,
+        token: aegle_ui::Token<aegle_ui::Color>,
+        color: Option<aegle_ui::Color>,
+    ) {
+        let mut runtime = self.0.runtime.borrow_mut();
+        runtime.tokens.retain(|(t, _)| *t != token);
+        if let Some(color) = color {
+            runtime.tokens.push((token, color));
+        }
+        for entry in &runtime.entries {
+            entry.ui.set_token(token, color);
+        }
     }
 
     /// The shared text system, to register fonts.
