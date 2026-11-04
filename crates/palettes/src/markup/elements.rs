@@ -249,24 +249,45 @@ fn keyboard(name: &str) -> KeyboardInteractivity {
     }
 }
 
+thread_local! {
+    /// Every live `Icon`'s view, name and size in dp, to show it again at a
+    /// new size or scale.
+    static ICONS: RefCell<HashMap<NodeId, (ImageView, String, f32)>> = RefCell::default();
+}
+
+/// Size of an `Icon` without `size`, in dp.
+const ICON_SIZE: f32 = 16.0;
+
 /// Shows the icon `name`: a theme icon or application id (`firefox`,
-/// `audio-volume-high`), or a path, relative to the asset roots. Empty clears
-/// it; a change to its file shows the new one.
+/// `audio-volume-high`), or a path, relative to the asset roots, at its
+/// size on the densest output. Empty clears it; a change to its file shows
+/// the new one.
 fn show_icon(view: &ImageView, name: &str) {
+    let size = ICONS.with_borrow_mut(|icons| {
+        icons.retain(|_, (v, _, _)| v.is_alive());
+        let entry = icons
+            .entry(view.id())
+            .or_insert_with(|| (view.clone(), String::new(), ICON_SIZE));
+        entry.1 = name.to_owned();
+        entry.2
+    });
     if name.is_empty() {
         crate::markup::image::clear(view);
         return;
     }
+    let pixels = crate::markup::image::pixels(size);
     let looks_like_path = name.contains('/') || name.ends_with(".png") || name.ends_with(".svg");
     let found = if looks_like_path {
         crate::markup::roots().resolve(name)
     } else {
         let icons = crate::services::icons();
-        icons.lookup(name, 64).or_else(|| icons.for_app(name, 64))
+        icons
+            .lookup(name, pixels)
+            .or_else(|| icons.for_app(name, pixels))
     };
     match found {
         Some(path) => {
-            if let Err(e) = crate::markup::image::show(view, &path) {
+            if let Err(e) = crate::markup::image::show_at(view, &path, pixels) {
                 eprintln!("palettes: icon {}: {e}", path.display());
             }
         }
@@ -304,9 +325,40 @@ fn fit(name: &str) -> Fit {
 
 fn icon_view(parent: &Container) -> ImageView {
     let view = parent.image_view();
-    view.set_width(16.0);
-    view.set_height(16.0);
+    view.set_width(ICON_SIZE);
+    view.set_height(ICON_SIZE);
     view
+}
+
+/// Sizes an `Icon`, showing its icon again for the new size.
+fn icon_size(view: &ImageView, size: f32) {
+    view.set_width(size);
+    view.set_height(size);
+    let name = ICONS.with_borrow_mut(|icons| {
+        let entry = icons.get_mut(&view.id())?;
+        entry.2 = size;
+        Some(entry.1.clone())
+    });
+    if let Some(name) = name.filter(|n| !n.is_empty()) {
+        show_icon(view, &name);
+    }
+}
+
+/// Shows every icon again once the densest output's scale changed.
+pub(crate) fn rescale(scale: f32) {
+    if !crate::markup::image::set_scale(scale) {
+        return;
+    }
+    let shown: Vec<_> = ICONS.with_borrow(|icons| {
+        (icons
+            .values()
+            .filter(|(v, name, _)| v.is_alive() && !name.is_empty()))
+        .map(|(v, name, _)| (v.clone(), name.clone()))
+        .collect()
+    });
+    for (view, name) in shown {
+        show_icon(&view, &name);
+    }
 }
 
 element! {
@@ -330,7 +382,7 @@ element! {
     pub Icon(ImageView) {
         create |parent| icon_view(parent);
         set name: line => show_icon;
-        set size: length => |view, size| { view.set_width(size); view.set_height(size) };
+        set size: length => icon_size;
     }
     /// An image file relative to the asset roots, placed by `fit`. In a
     /// `Stack` with `fit: cover` and a `radius`, it is a rounded background.

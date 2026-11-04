@@ -57,6 +57,6 @@ Beyond the services below: blurred image backgrounds.
 - [ ] Wallpaper layer with images
 - [x] `palettes msg <action>` over a socket, so compositor keybindings open launchers
 - [x] Popups from markup (`edge: popup`), `host.open` / `host.close`
-- [ ] Icons rasterized at the surface's scale rather than a fixed 64 px
+- [x] Icons rasterized at the surface's scale rather than a fixed 64 px
 - [x] Luau scripts beside documents: shared states, actions, commands, timers, file watches
 - [x] Passive popups (tooltips) and popups sized to their content

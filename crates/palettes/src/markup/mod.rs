@@ -442,8 +442,11 @@ impl Documents {
             .inspect_err(|e| eprintln!("palettes: no hot reload: {e}"))
             .ok();
         WATCHER.with_borrow_mut(|slot| *slot = watcher);
+        let densest = |outputs: &[OutputInfo]| outputs.iter().map(|o| o.scale).fold(1.0, f32::max);
+        elements::rescale(densest(&shell.outputs()));
         let resync = shell.clone();
-        shell.on_outputs(move |_| {
+        shell.on_outputs(move |shell| {
+            elements::rescale(densest(&shell.outputs()));
             with_runner(|runner| {
                 for document in &mut runner.documents {
                     document.sync(&resync)?;
