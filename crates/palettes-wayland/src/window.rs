@@ -8,6 +8,7 @@ use aegle_platform::{
 use wayland_client::{Connection, Dispatch, Proxy, QueueHandle, protocol::wl_surface::WlSurface};
 use wayland_protocols::{
     ext::background_effect::v1::client::ext_background_effect_surface_v1::ExtBackgroundEffectSurfaceV1,
+    ext::session_lock::v1::client::ext_session_lock_surface_v1::ExtSessionLockSurfaceV1,
     wp::{
         fractional_scale::v1::client::wp_fractional_scale_v1::WpFractionalScaleV1,
         viewporter::client::wp_viewport::WpViewport,
@@ -36,6 +37,8 @@ pub(crate) enum Role {
         /// Kept to place it again at a new size.
         options: PopupOptions,
     },
+    /// A session lock surface, covering one output.
+    Lock(ExtSessionLockSurfaceV1),
 }
 
 pub(crate) struct Window {
@@ -142,7 +145,20 @@ impl State {
                 return Err(error);
             }
         };
-        self.next_window += 1;
+        self.add_window(id, surface, role, options.size);
+        Ok(id)
+    }
+
+    /// Registers a window whose role is made, then commits its surface.
+    pub(crate) fn add_window(
+        &mut self,
+        id: WindowId,
+        surface: WlSurface,
+        role: Role,
+        size: PixelSize,
+    ) {
+        let qh = self.qh.clone();
+        self.next_window = self.next_window.max(id.0 + 1);
         let viewport = self
             .globals
             .viewporter
@@ -153,7 +169,11 @@ impl State {
             .fractional
             .as_ref()
             .map(|f| f.get_fractional_scale(&surface, &qh, id));
-        surface.commit();
+        // A lock surface must not commit before its first configure, which
+        // arrives without one; the others ask for theirs by committing.
+        if !matches!(role, Role::Lock(_)) {
+            surface.commit();
+        }
         self.windows.push(Window {
             id,
             surface,
@@ -162,8 +182,8 @@ impl State {
             fractional,
             effect: None,
             info: WindowInfo {
-                size: options.size,
-                buffer: options.size,
+                size,
+                buffer: size,
                 scale: 1.0,
                 active: true,
                 configured: false,
@@ -175,7 +195,6 @@ impl State {
             frame_requested: false,
             frame_pending: false,
         });
-        Ok(id)
     }
 
     fn layer_role(
@@ -244,6 +263,7 @@ impl State {
                 surface.get_popup(&popup);
                 popup
             }
+            Role::Lock(_) => xdg.get_popup(None, &positioner, &self.qh, id),
         };
         positioner.destroy();
         if let Some(seat) = options.grab {
@@ -355,6 +375,7 @@ impl State {
                 popup.destroy();
                 xdg.destroy();
             }
+            Role::Lock(surface) => surface.destroy(),
         }
         if let Some(viewport) = window.viewport {
             viewport.destroy();
@@ -375,13 +396,13 @@ impl State {
     }
 
     /// The compositor fixed a size: `width`/`height` zero keep the requested one.
-    fn configured(&mut self, id: WindowId, width: u32, height: u32) {
+    pub(crate) fn configured(&mut self, id: WindowId, width: u32, height: u32) {
         let Some(window) = self.window_mut(id) else {
             return;
         };
         let requested = match &window.role {
             Role::Layer { size, .. } => *size,
-            Role::Popup { .. } => window.info.size,
+            Role::Popup { .. } | Role::Lock(_) => window.info.size,
         };
         let size = PixelSize {
             width: if width == 0 { requested.width } else { width },

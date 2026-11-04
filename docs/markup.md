@@ -21,7 +21,7 @@ A column whose properties place its surface. All of them can be bound.
 
 | Property | Type | Default | Meaning |
 |---|---|---|---|
-| `edge` | `top` `bottom` `left` `right` `center` `background` `popup` | `top` | Where it sits. `center` is an overlay; `background` covers the output below windows; `popup` opens beside a control (below) |
+| `edge` | `top` `bottom` `left` `right` `center` `background` `popup` `lock` | `top` | Where it sits. `center` is an overlay; `background` covers the output below windows; `popup` opens beside a control (below); `lock` locks the session (below) |
 | `size` | length | `32dp` | Bar thickness; height of a `center` panel or popup (a popup without one is as tall as its content) |
 | `span` | length | `0` | Length along the edge (width of a `center` panel or popup); `0` stretches, and a popup is as wide as its content. A bar with a span is a dock |
 | `layer` | `background` `bottom` `top` `overlay` | by edge | Stacking layer |
@@ -54,6 +54,19 @@ Panel {
 ```
 
 Popups share data with the panel that opened them through scripts (`state.month = ...` reaches every document declaring `month`); see [`examples/stats.aegle`](../examples/stats.aegle) and [`examples/calendar.aegle`](../examples/calendar.aegle).
+
+### Lock screens
+
+A document with `edge: lock` locks the session (ext-session-lock-v1) when it opens, typically by `palettes msg open lock.aegle` from a keybinding or an idle daemon, and covers every output, new ones included; its first `TextField` has the keyboard. `host.unlock(password)` checks the password with PAM (service `palettes` if `/etc/pam.d/palettes` exists, else `login`) on its own thread; on success the document closes and the session unlocks, otherwise `lock_error` holds PAM's reason. Should Palettes stop while locked, the compositor keeps the session locked. See [`examples/lock.aegle`](../examples/lock.aegle).
+
+```text
+Panel {
+    edge: lock
+    state lock_error: string = ""
+    TextField { password: true; on submitted { host.unlock(self.text) } }
+    Text { text: lock_error }
+}
+```
 
 ### Visual effects
 
@@ -168,6 +181,8 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | State | Type | Value |
 |---|---|---|
 | `output` | `string` | The panel's output name |
+| `user` | `string` | The user's login name |
+| `lock_error` | `string` | Why the last `host.unlock` failed, in a lock document |
 | `time` | `string` | Local time formatted by `time_format` (`%H:%M` if empty) |
 | `date` | `string` | Local date formatted by `date_format` (`%a %d %b` if empty) |
 | `time_format`, `date_format` | `string` | `strftime` patterns, read when the panel opens; seconds make the clock tick every second |
@@ -277,6 +292,7 @@ record BluetoothDevice { address: string; name: string; icon: string; paired: bo
 | `host.toggle_bluetooth()`, `host.bluetooth_scan(bool)` | Power the adapter; look for devices |
 | `host.bluetooth_connect(string)`, `host.bluetooth_disconnect(string)` | By `BluetoothDevice.address` |
 | `host.bluetooth_pair(string)`, `host.bluetooth_forget(string)` | Pair and trust (devices that need a code typed are refused); remove |
+| `host.unlock(string)` | In a lock document: check the password and unlock |
 | `host.set_brightness(float)` | Set the backlight, `0.0`–`1.0`, through logind (no permissions needed) |
 | `host.toggle(string)` | Open another document, or close it if open |
 | `host.open(string)`, `host.close(string)` | Open a document unless open; close it if open |

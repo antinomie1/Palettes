@@ -45,6 +45,8 @@ pub(crate) struct Entry {
     pub fitting: Option<PixelSize>,
     /// The passive popup showing this surface's tooltip.
     pub tooltip: Option<WindowId>,
+    /// A session lock surface.
+    pub lock: bool,
 }
 
 pub(crate) struct Runtime {
@@ -109,6 +111,17 @@ impl Runtime {
         options: WindowOptions<'_>,
         size: PixelSize,
     ) -> Result<(WindowId, Rc<Ui>)> {
+        let parent = options.popup.map(|p| p.parent);
+        self.open_with(size, parent, |platform| platform.create_window(options))
+    }
+
+    /// Opens a surface `create` makes, with its own tree and presenter.
+    pub fn open_with(
+        &mut self,
+        size: PixelSize,
+        parent: Option<WindowId>,
+        create: impl FnOnce(&mut Wayland) -> aegle_platform::Result<WindowId>,
+    ) -> Result<(WindowId, Rc<Ui>)> {
         let ui = Rc::new(Ui::with_fonts(self.fonts.clone(), self.theme())?);
         ui.advance_animations(self.clock.elapsed())?;
         ui.set_default_transition(self.options.transition);
@@ -126,7 +139,7 @@ impl Runtime {
         for &(token, color) in &self.tokens {
             ui.set_token(token, color);
         }
-        let id = self.platform.create_window(options)?;
+        let id = create(&mut self.platform)?;
         let renderer = match self.presenter(id) {
             Ok(renderer) => renderer,
             Err(error) => {
@@ -145,11 +158,12 @@ impl Runtime {
             clock: EventClock::default(),
             flick: Vec::new(),
             ready: false,
-            parent: options.popup.map(|p| p.parent),
+            parent,
             shape: Shape::default(),
             fit: None,
             fitting: None,
             tooltip: None,
+            lock: false,
         });
         Ok((id, ui))
     }

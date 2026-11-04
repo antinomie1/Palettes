@@ -14,10 +14,11 @@ surfaces. It works with any wlr-layer-shell compositor and integrates deeply wit
 ## Commands
 
 ```sh
-cargo build                          # needs libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan loader
+cargo build                          # needs libxkbcommon, libpipewire-0.3, libpam, clang (bindgen), a Vulkan loader
 cargo test                           # every crate's tests/; live parts skip without WAYLAND_DISPLAY / PipeWire / dbus-daemon
 cargo test -p palettes-shell --test input -- --ignored   # typing, IME, clipboard, drag; headless Pastel only
 cargo test -p palettes --test popup -- --ignored         # clicks a popup open and closed; headless Pastel only
+cargo test -p palettes --test lock -- --ignored          # locks and unlocks the session; headless Pastel only
 cargo run -p palettes --example bar  # the Rust bar on every output
 cargo run -p palettes -- examples/bar.aegle    # the markup runner; save the file to reload
 cargo run -p palettes -- --check examples/bar.aegle

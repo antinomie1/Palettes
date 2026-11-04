@@ -63,6 +63,7 @@ pub(crate) struct State {
     pub ime: Ime,
     /// Cursor images, where the compositor has no cursor-shape-v1.
     pub themes: Option<Themes>,
+    pub lock: crate::lock::Lock,
 }
 
 impl State {
@@ -93,6 +94,7 @@ impl State {
         };
         let clipboard = Clipboard::new(globals.bind(&qh, 1..=3, ()).ok());
         let ime = Ime::new(globals.bind(&qh, 1..=1, ()).ok());
+        let qh_lock = qh.clone();
         let mut state = Self {
             globals: globals_bound,
             qh,
@@ -105,6 +107,7 @@ impl State {
             clipboard,
             ime,
             themes,
+            lock: crate::lock::Lock::new(globals.bind(&qh_lock, 1..=1, ()).ok()),
         };
         let registry = globals.registry();
         for global in globals.contents().clone_list() {

@@ -197,6 +197,13 @@ fn audio(view: &View, audio: &AudioState) {
 pub fn bind(shell: &Shell, shared: &Rc<RefCell<View>>, owner: &Node, output: &str) -> Result<()> {
     let view = &*shared.borrow();
     set(view, "output", string(output));
+    if view.get("user").is_some() {
+        set(
+            view,
+            "user",
+            string(&palettes_system::user_name().unwrap_or_default()),
+        );
+    }
     for (name, default_format) in [("time", "%H:%M"), ("date", "%a %d %b")] {
         if view.get(name).is_none() {
             continue;

@@ -167,6 +167,47 @@ impl Shell {
         *self.0.on_error.borrow_mut() = Some(Box::new(handler));
     }
 
+    /// Locks the session (ext-session-lock-v1): the compositor shows only
+    /// the surfaces of [`Self::lock_surface`], one per output, until
+    /// [`Self::unlock`]. Should Palettes die meanwhile, the session stays
+    /// locked. A compositor that refuses closes the lock surfaces.
+    pub fn lock(&self) -> Result<()> {
+        Ok(self.0.runtime.borrow_mut().platform.lock()?)
+    }
+
+    /// Whether the compositor confirmed the lock: nothing else shows.
+    pub fn is_locked(&self) -> bool {
+        self.0.runtime.borrow().platform.is_locked()
+    }
+
+    /// A surface covering `output` while the session is locked, sized by the
+    /// compositor; it has the keyboard.
+    pub fn lock_surface(&self, output: aegle_platform::OutputId) -> Result<Surface> {
+        let mut runtime = self.0.runtime.borrow_mut();
+        let (id, ui) = runtime.open_with(PixelSize::default(), None, |platform| {
+            platform.create_lock_window(output)
+        })?;
+        if let Some(entry) = runtime.entries.iter_mut().find(|e| e.id == id) {
+            entry.lock = true;
+        }
+        drop(runtime);
+        Ok(Surface::new(self, id, &ui))
+    }
+
+    /// Unlocks the session and closes the lock surfaces.
+    pub fn unlock(&self) -> Result<()> {
+        let mut runtime = self.0.runtime.borrow_mut();
+        runtime.platform.unlock()?;
+        let locks: Vec<_> = (runtime.entries.iter())
+            .filter(|e| e.lock)
+            .map(|e| e.id)
+            .collect();
+        for id in locks {
+            runtime.close(id)?;
+        }
+        Ok(())
+    }
+
     /// Gives a color token, such as one from `aegle_ui::register_token`,
     /// `color` on every surface, now and opened later; `None` returns it to
     /// its default.

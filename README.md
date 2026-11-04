@@ -15,6 +15,7 @@ A Wayland desktop shell and widget library in Rust: bars, docks, launchers, popu
 - **D-Bus in scripts**: `dbus.system(name, path)` calls methods and follows properties and signals, without blocking the shell
 - **Glass and curves**: rounded, translucent panels with the desktop blurred behind them (`radius`, `background: #1e1e2ea0`, `opacity`, `blur: true`), on compositors with ext-background-effect-v1 such as KWin and Pastel
 - **Wallpapers**: `Panel { edge: background }` with an image up to 4K, optionally blurred; its colors become the palette tokens `palette.1`–`palette.5`
+- **Lock screen**: `Panel { edge: lock }` locks the session on every output (ext-session-lock-v1); `host.unlock(password)` checks it with PAM
 - **Idle means idle**: nothing runs between changes; services start only when used
 - **Composable**: any aegle control library, such as [am3](https://github.com/antinomie1/am3) (`--features am3`)
 
@@ -81,7 +82,7 @@ Markup draws vector shapes (`Shape` with SVG path data, `Arc` for rings and gaug
 
 ## Building
 
-Rust ≥ 1.88, libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan driver.
+Rust ≥ 1.88, libxkbcommon, libpipewire-0.3, libpam, clang (bindgen), a Vulkan driver.
 
 ```sh
 cargo build --release

@@ -53,7 +53,7 @@ Beyond the services below: blurred image backgrounds (done: `Image { blur }`).
       with DBusMenu, NetworkManager Wi-Fi, BlueZ; `dbus` for scripts
 - [x] Brightness, keyboard layout, CPU and memory, wallpaper palette as built-in states
 - [x] PipeWire: device lists, default device switching, per-app volume, peak levels
-- [ ] Session lock surface (ext-session-lock-v1)
+- [x] Session lock surface (ext-session-lock-v1), unlocked through PAM
 - [x] Wallpaper layer with images, and its palette as tokens and a state
 - [x] `palettes msg <action>` over a socket, so compositor keybindings open launchers
 - [x] Popups from markup (`edge: popup`), `host.open` / `host.close`

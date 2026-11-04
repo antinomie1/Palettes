@@ -177,6 +177,7 @@ pub(crate) fn register(shell: &Shell) {
         mixer(shell, |m, a| m.set_stream_muted(int(a) as u32, None)),
     );
     super::system::actions(Some(shell));
+    super::lock::register(Some(shell));
     action("toggle", &[Type::String], |a| super::toggle(text(a)));
     action("reload", &[], |_| super::reload_all());
     let quit = shell.clone();
@@ -212,4 +213,5 @@ pub(crate) fn declare() {
         action(name, params, |_| Ok(()));
     }
     super::system::actions(None);
+    super::lock::register(None);
 }

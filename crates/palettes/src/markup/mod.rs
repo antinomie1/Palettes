@@ -14,6 +14,7 @@ pub mod elements;
 mod follow;
 pub mod image;
 pub(crate) mod link;
+mod lock;
 mod pixels;
 mod popup;
 mod shader;
@@ -142,7 +143,10 @@ fn open_panel(
     output: &OutputInfo,
     placement: &elements::Placement,
 ) -> Result<Open> {
-    let surface = shell.panel(placement.options().on(output.id))?;
+    let surface = match placement.edge {
+        elements::Edge::Lock => lock::surface(shell, output)?,
+        _ => shell.panel(placement.options().on(output.id))?,
+    };
     // The `Panel` fills the surface and paints itself; around its corners
     // the desktop shows.
     surface.set_background(aegle_ui::Color::TRANSPARENT);
@@ -160,6 +164,9 @@ fn open_panel(
         view,
     };
     attach(shell, &open, states)?;
+    if placement.edge == elements::Edge::Lock {
+        lock::focus_field(&open.surface)?;
+    }
     Ok(open)
 }
 
@@ -218,7 +225,7 @@ impl Document {
             attach(shell, open, &loaded.states)?;
             if popup {
                 popup::fit(open, &placement)?;
-            } else {
+            } else if placement.edge != elements::Edge::Lock {
                 open.surface
                     .set_placement(placement.options().on(open.output.id))?;
             }
@@ -236,9 +243,15 @@ impl Document {
         self.sync(shell)
     }
 
-    fn close(self) {
+    /// Closes its surfaces and stops its script; a lock document unlocks.
+    fn close(self, shell: &Shell) {
         if let Some(script) = &self.script {
             crate::script::unload(script);
+        }
+        if self.placement.edge == elements::Edge::Lock
+            && let Err(e) = shell.unlock()
+        {
+            eprintln!("palettes: unlocking: {e}");
         }
         for open in self.panels {
             if open.surface.is_open() {
@@ -293,7 +306,7 @@ fn open_document(runner: &mut Runner, path: &Path) -> Result<()> {
         match opened {
             Ok(()) => Ok(document),
             Err(e) => {
-                document.close();
+                document.close(&runner.shell);
                 Err(e)
             }
         }
@@ -377,7 +390,7 @@ fn show(name: &str, want: Option<bool>) -> Result<()> {
         let index = runner.documents.iter().position(|d| d.path == path);
         match (index, want) {
             (Some(index), None | Some(false)) => {
-                runner.documents.remove(index).close();
+                runner.documents.remove(index).close(&runner.shell);
                 Ok(())
             }
             (None, None | Some(true)) => open_document(runner, &path),

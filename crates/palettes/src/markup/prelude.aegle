@@ -4,6 +4,8 @@
 // leave them out and the service behind them never starts.
 //
 //   state output: string               the output this panel is on, such as "DP-1"
+//   state user: string                 the user's login name
+//   state lock_error: string           why host.unlock failed, in a `Panel { edge: lock }`
 //   state time: string                 local time, formatted by `time_format`
 //   state time_format: string          strftime pattern, "%H:%M" if empty
 //   state date: string                 local date, formatted by `date_format`
@@ -75,6 +77,7 @@
 //   host.bluetooth_connect(string)  host.bluetooth_disconnect(string)   by address
 //   host.bluetooth_pair(string)  host.bluetooth_forget(string)
 //   host.set_brightness(float)     0.0–1.0, through logind
+//   host.unlock(string)            in a lock document: check the password (PAM) and unlock
 //   host.toggle(string)            open or close another panel document
 //   host.open(string)              open a document unless it is open
 //   host.close(string)             close a document if it is open

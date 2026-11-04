@@ -50,3 +50,14 @@ fn processor_and_memory_use_parse_from_proc() {
     assert_eq!(memory(meminfo), Some((4_000_000 * 1024, 16_000_000 * 1024)));
     assert_eq!(memory("MemTotal: 1 kB\n"), None);
 }
+
+#[test]
+fn pam_turns_away_an_unknown_service() {
+    let user = palettes_system::user_name().expect("a user");
+    assert!(!user.is_empty());
+    // An unconfigured service falls to PAM's `other`, which denies; no
+    // password of the real account is tried, so no failure is counted.
+    let denied = palettes_system::authenticate("palettes-test-none", &user, "x");
+    assert!(denied.is_err(), "{denied:?}");
+    assert!(["palettes", "login"].contains(&palettes_system::pam_service()));
+}

@@ -15,6 +15,7 @@ Rust 编写的 Wayland 桌面 shell 与桌面小控件库：状态栏、程序�
 - **脚本中的 D-Bus**：`dbus.system(name, path)` 调用方法、跟随属性与信号，不阻塞 shell
 - **毛玻璃与圆角**：圆角、半透明面板，并让混成器模糊其后的桌面（`radius`、`background: #1e1e2ea0`、`opacity`、`blur: true`），需混成器支持 ext-background-effect-v1，如 KWin 与 Pastel
 - **壁纸**：`Panel { edge: background }` 中放入最高 4K 的图片，可模糊；其主色成为调色板令牌 `palette.1`–`palette.5`
+- **锁屏**：`Panel { edge: lock }` 在每块屏幕上锁定会话（ext-session-lock-v1）；`host.unlock(password)` 经 PAM 校验
 - **空闲即静止**：无变化时不运行任何代码；服务在首次使用时才启动
 - **可组合**：可与任何 aegle 控件库结合，例如 [am3](https://github.com/antinomie1/am3)（`--features am3`）
 
@@ -81,7 +82,7 @@ Surface 即其根容器：`bar.set_radius(12.0)`、`bar.set_background(color)`�
 
 ## 构建
 
-需要 Rust ≥ 1.88、libxkbcommon、libpipewire-0.3、clang（bindgen）与 Vulkan 驱动。
+需要 Rust ≥ 1.88、libxkbcommon、libpipewire-0.3、libpam、clang（bindgen）与 Vulkan 驱动。
 
 ```sh
 cargo build --release

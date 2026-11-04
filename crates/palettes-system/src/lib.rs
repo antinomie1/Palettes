@@ -2,13 +2,15 @@
 //! battery and power profiles (UPower), media players (MPRIS), a
 //! notification server, a system tray (StatusNotifierItem and DBusMenu),
 //! network (NetworkManager), bluetooth (BlueZ) and the backlight (sysfs,
-//! set through logind); and processor and memory use from `/proc`.
+//! set through logind); processor and memory use from `/proc`; and password
+//! checks through PAM.
 //!
 //! A service starts with [`System::spawn`], reads what it shows, then blocks
 //! on its bus until a signal changes it; it calls back with its whole state
 //! only when that changed. Requests go to its thread and never wait for a
 //! reply on the caller's. [`Link`] is a plain connection for scripts.
 
+mod auth;
 mod battery;
 mod bluetooth;
 mod brightness;
@@ -23,6 +25,7 @@ mod pixmap;
 mod tray;
 
 pub use aegle_dbus::{Kind, Message, Value};
+pub use auth::{authenticate, pam_service, user_name};
 pub use battery::{Battery, BatteryState, Charge};
 pub use bluetooth::{Bluetooth, BluetoothDevice, BluetoothState};
 pub use brightness::{BACKLIGHTS, Brightness, BrightnessState};

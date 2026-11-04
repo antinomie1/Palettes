@@ -1,0 +1,24 @@
+// A lock screen: `palettes msg open lock.aegle` from a keybinding or idle
+// daemon locks the session; the password unlocks it (PAM, service `login`
+// or `/etc/pam.d/palettes`). The wallpaper's palette colors it.
+use "palettes.aegle"
+
+Panel {
+    edge: lock
+    background: token("palette.1")
+    align: center
+    justify: center
+    gap: 12dp
+    state time: string = ""
+    state user: string = ""
+    state lock_error: string = ""
+
+    Text { text: time; font_size: 64dp }
+    Text { text: user }
+    TextField {
+        width: 260dp
+        password: true
+        on submitted { host.unlock(self.text) }
+    }
+    Text { text: lock_error; visible: lock_error != "" }
+}

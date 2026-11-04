@@ -76,9 +76,9 @@ fn dismissed(path: PathBuf) {
         let index = runner.documents.iter().position(|d| {
             d.path == path && d.is_popup() && !d.panels.iter().any(|p| p.surface.is_open())
         });
-        Ok(index.map(|index| runner.documents.remove(index)))
+        Ok(index.map(|index| (runner.documents.remove(index), runner.shell.clone())))
     });
-    if let Ok(Some(document)) = closed {
-        document.close();
+    if let Ok(Some((document, shell))) = closed {
+        document.close(&shell);
     }
 }

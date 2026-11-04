@@ -35,6 +35,10 @@ Every surface has an aegle `WindowRenderer` on one shared Vulkan device and glyp
 
 Only layer surfaces and xdg popups. A panel's placement (`PanelOptions`) can change in place; popups attach to a panel or another popup with a grab for menus. A fitted popup (`Surface::fit`) lets one node keep its content's size; after each refresh a different size is asked for with `xdg_popup.reposition` (xdg-shell 3), and frames wait for the configure that applies it. Tooltips do not draw inside their window: aegle reports them (`aegle_widgets::host_tooltips`) and the shell shows each in a passive popup fitted to its text, below the control or flipped above it. Removing a surface first drops its presenter, then its popups, then the Wayland objects. `Surface::on_close` callbacks run after the event that closed the surface, outside the runtime's borrow, whether the shell or the compositor closed it.
 
+## Session lock
+
+`Shell::lock` asks for an ext-session-lock-v1 lock and `Shell::lock_surface` covers an output; a lock surface commits nothing before its first configure, and the compositor sizes it. `Shell::unlock` sends `unlock_and_destroy` (or cancels a lock not yet confirmed) and then removes the lock surfaces. A lock document opens one per output as outputs come, and only closing it unlocks: losing every output does not. `host.unlock` runs PAM (`pam_authenticate`, `pam_acct_mgmt`) on a short-lived thread, one check at a time, answering every prompt with the password, and reports through a channel.
+
 ## Subscriptions
 
 Services keep the latest value and a list of followers, each owned by a control. A follower whose control was removed is dropped at the next update, so closing a panel (for example when its output disappears) ends everything it followed without bookkeeping.

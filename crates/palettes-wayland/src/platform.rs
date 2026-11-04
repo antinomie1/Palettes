@@ -76,6 +76,33 @@ impl Wayland {
         self.flush()
     }
 
+    /// Asks the compositor to lock the session; then cover every output
+    /// with [`Self::create_lock_window`]. A compositor that refuses closes
+    /// those windows ([`Event::Close`](aegle_platform::Event)).
+    pub fn lock(&mut self) -> Result<()> {
+        self.state.lock_session()?;
+        self.flush()
+    }
+
+    /// Whether the compositor confirmed the lock: every output is hidden.
+    pub fn is_locked(&self) -> bool {
+        self.state.is_locked()
+    }
+
+    /// A lock surface covering `output`, while the session is locking or
+    /// locked; the compositor gives its size.
+    pub fn create_lock_window(&mut self, output: aegle_platform::OutputId) -> Result<WindowId> {
+        let id = self.state.create_lock_window(output)?;
+        self.flush()?;
+        Ok(id)
+    }
+
+    /// Unlocks the session. Remove its lock windows next.
+    pub fn unlock(&mut self) -> Result<()> {
+        self.state.unlock_session();
+        self.flush()
+    }
+
     /// Sends queued requests. A full socket keeps the rest for the next
     /// flush; a closed connection is an error, so the loop ends.
     fn flush(&self) -> Result<()> {

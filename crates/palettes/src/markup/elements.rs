@@ -28,6 +28,8 @@ pub enum Edge {
     /// `host.toggle` or `host.open`: `span` wide and `size` tall, or as
     /// large as its content where they are 0.
     Popup,
+    /// Locks the session and covers every output until `host.unlock`.
+    Lock,
 }
 
 /// Where a `Panel` document's surface goes, as its properties say.
@@ -92,7 +94,8 @@ impl Placement {
                 .keyboard(KeyboardInteractivity::None),
             Edge::Background => PanelOptions::background(),
             // Popups are not layer surfaces; see `popup_options`.
-            Edge::Popup => PanelOptions::overlay(self.popup_width(), size),
+            // Popups and lock surfaces are not layer surfaces.
+            Edge::Popup | Edge::Lock => PanelOptions::overlay(self.popup_width(), size),
         };
         if let Some(layer) = self.layer {
             options = options.layer(layer);
@@ -116,7 +119,7 @@ impl Placement {
             Edge::Bottom => Side::Above,
             Edge::Left | Edge::Popup => Side::Right,
             Edge::Right => Side::Left,
-            Edge::Top | Edge::Center | Edge::Background => Side::Below,
+            Edge::Top | Edge::Center | Edge::Background | Edge::Lock => Side::Below,
         };
         let options = PopupOptions::below(anchor, self.popup_width(), self.size.max(1)).side(side);
         if self.passive {
@@ -171,7 +174,8 @@ fn update(container: &Container, change: impl FnOnce(&mut Placement)) {
         let surface = panel
             .surface
             .as_ref()
-            .filter(|_| panel.placement != before && panel.placement.edge != Edge::Popup)?;
+            .filter(|_| panel.placement != before)
+            .filter(|_| !matches!(panel.placement.edge, Edge::Popup | Edge::Lock))?;
         Some((surface.clone(), panel.placement.options()))
     });
     if let Some((surface, options)) = moved
@@ -226,6 +230,7 @@ fn edge(name: &str) -> Edge {
         "center" => Edge::Center,
         "background" => Edge::Background,
         "popup" => Edge::Popup,
+        "lock" => Edge::Lock,
         other => unreachable!("checked edge `{other}`"),
     }
 }
@@ -375,7 +380,7 @@ element! {
     pub Panel(Container) {
         layout flex;
         create |parent| panel(parent);
-        set edge: choice(top, bottom, left, right, center, background, popup) => |p, v| update(p, |s| s.edge = edge(v));
+        set edge: choice(top, bottom, left, right, center, background, popup, lock) => |p, v| update(p, |s| s.edge = edge(v));
         set size: length => |p, v| update(p, |s| s.size = v.max(0.0) as u32);
         set span: length => |p, v| update(p, |s| s.span = v.max(0.0) as u32);
         set layer: choice(background, bottom, top, overlay) => |p, v| update(p, |s| s.layer = Some(layer(v)));

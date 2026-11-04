@@ -12,6 +12,7 @@
 //! [`Wayland::set_input`] limits input to a region of a surface, such as its
 //! rounded shape; where the compositor offers ext-background-effect-v1,
 //! [`Wayland::set_blur`] has it blur what lies behind a region.
+//! [`Wayland::lock`] locks the session with ext-session-lock-v1.
 //!
 //! The loop blocks in `poll` on the Wayland socket and a wake `eventfd`; it
 //! wakes on its own only to repeat a held key. Without cursor-shape-v1,
@@ -23,6 +24,7 @@ mod drag;
 mod gpu;
 mod ime;
 mod keyboard;
+mod lock;
 mod output;
 mod platform;
 mod pointer;
