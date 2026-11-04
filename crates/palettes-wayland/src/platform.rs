@@ -68,6 +68,14 @@ impl Wayland {
         self.flush()
     }
 
+    /// Resizes a popup to `size` logical pixels, placed again beside its
+    /// anchor; a [`Event::Configure`](aegle_platform::Event) follows.
+    /// Compositors without xdg-shell 3 cannot resize popups.
+    pub fn resize_popup(&mut self, window: WindowId, size: PixelSize) -> Result<()> {
+        self.state.resize_popup(window, size)?;
+        self.flush()
+    }
+
     /// Sends queued requests. A full socket keeps the rest for the next
     /// flush; a closed connection is an error, so the loop ends.
     fn flush(&self) -> Result<()> {

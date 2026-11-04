@@ -22,20 +22,23 @@ A column whose properties place its surface. All of them can be bound.
 | Property | Type | Default | Meaning |
 |---|---|---|---|
 | `edge` | `top` `bottom` `left` `right` `center` `background` `popup` | `top` | Where it sits. `center` is an overlay; `background` covers the output below windows; `popup` opens beside a control (below) |
-| `size` | length | `32dp` | Bar thickness; height of a `center` panel or popup |
-| `span` | length | `0` | Length along the edge (width of a `center` panel or popup); `0` stretches, a popup is then 320dp wide. A bar with a span is a dock |
+| `size` | length | `32dp` | Bar thickness; height of a `center` panel or popup (a popup without one is as tall as its content) |
+| `span` | length | `0` | Length along the edge (width of a `center` panel or popup); `0` stretches, and a popup is as wide as its content. A bar with a span is a dock |
 | `layer` | `background` `bottom` `top` `overlay` | by edge | Stacking layer |
 | `exclusive` | bool | bars: true | Reserve its space so windows avoid it |
 | `keyboard` | `none` `exclusive` `on_demand` | `none` | Keyboard focus policy; launchers use `exclusive`. A focused `TextField` takes compose sequences (dead keys), input methods (text-input-v3) and the clipboard |
 | `offset` | length | `0` | Distance from the anchored edges |
 | `output` | line | `""` | Only this output (`DP-1`); empty for every output |
 | `blur` | bool | `false` | The compositor blurs the desktop behind the panel's rounded shape |
+| `passive` | bool | `false` | A popup that takes no keyboard and stays open on clicks elsewhere |
 
 Layout properties (`padding`, `gap`, `background`, …) apply as on `Column`.
 
 ### Popups
 
-A document with `edge: popup` opens when `host.toggle` or `host.open` names it, beside the control under the pointer: above it on a bottom bar, beside it on a side bar or another popup, below it otherwise. It takes the keyboard while open, and a click outside the shell closes it, stopping its script. A popup opened from another popup is a submenu.
+A document with `edge: popup` opens when `host.toggle` or `host.open` names it, beside the control under the pointer: above it on a bottom bar, beside it on a side bar or another popup, below it otherwise. It takes the keyboard while open, and a click outside the shell closes it, stopping its script; a `passive` one does neither and closes only by `host.close`. A popup opened from another popup is a submenu. Without `size` or `span` a popup takes its content's height or width and follows it as states change, so a menu grows with its entries.
+
+`tooltip: "..."` on any control shows a small popup beside it once the pointer rests there, outside the bar.
 
 ```text
 // calendar.aegle, opened by `Button { text: time; on clicked { host.toggle("calendar.aegle") } }`

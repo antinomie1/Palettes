@@ -44,6 +44,16 @@ fn panels_lay_out_and_channels_deliver() {
 
     let popup = bar.popup_below(&bar, 100, 50).unwrap();
     assert!(until(&shell, || popup.bounds().size.width == 100.0));
+    // A fitted popup takes its content's size, and follows it.
+    let content = popup.column();
+    content.set_width(123.0);
+    content.set_height(45.0);
+    popup.set_padding(0.0);
+    popup.fit(&content).unwrap();
+    let size = |w: f32, h: f32| popup.bounds().size == aegle_ui::Size::new(w, h);
+    assert!(until(&shell, || size(123.0, 45.0)), "fitted");
+    content.set_height(60.0);
+    assert!(until(&shell, || size(123.0, 60.0)), "grown");
     bar.close().unwrap();
     assert!(!popup.is_open(), "popups close with their parent");
     assert!(

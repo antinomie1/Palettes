@@ -108,6 +108,23 @@ impl Surface {
         self.with_shape(|shape| crate::shape::toggle(&mut shape.blur, node, blur))
     }
 
+    /// Sizes this popup to `node`, a control of it, as laid out: the node
+    /// keeps its content's size (or the width and height set on it) and the
+    /// popup follows it as that content changes. Compositors before
+    /// xdg-shell 3 keep the popup's first size.
+    pub fn fit(&self, node: &Node) -> Result<()> {
+        crate::runtime::fit_node(node);
+        let inner = self.inner()?;
+        let mut runtime = inner.runtime.borrow_mut();
+        let entry = runtime
+            .entries
+            .iter_mut()
+            .find(|e| e.id == self.id)
+            .ok_or(UiError::DeadHandle)?;
+        entry.fit = Some(node.clone());
+        Ok(())
+    }
+
     fn with_shape(&self, change: impl FnOnce(&mut crate::shape::Shape)) -> Result<()> {
         let inner = self.inner()?;
         let mut runtime = inner.runtime.borrow_mut();

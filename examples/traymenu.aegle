@@ -3,7 +3,6 @@ use "palettes.aegle"
 
 Panel {
     edge: popup
-    size: 240dp
     span: 220dp
     radius: 10dp
     background: #313244f2

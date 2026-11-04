@@ -10,8 +10,9 @@ use aegle_platform::{
 use aegle_render_vulkan::{SharedDevice, WindowRenderer};
 use aegle_scene::Affine;
 use aegle_ui::{
-    Color, ColorSlot, Cursor, Modifiers, Rect, Result, Size, TextSystem, Theme, Ui, Visit,
+    Color, ColorSlot, Cursor, Modifiers, Node, Rect, Result, Size, TextSystem, Theme, Ui, Visit,
 };
+use aegle_widgets::HostTooltip;
 use palettes_wayland::{Wayland, WindowSurface};
 use std::{cell::RefCell, rc::Rc, time::Instant};
 
@@ -37,6 +38,12 @@ pub(crate) struct Entry {
     pub ready: bool,
     pub parent: Option<WindowId>,
     pub shape: Shape,
+    /// The node whose laid-out size the surface takes (a popup's content).
+    pub fit: Option<Node>,
+    /// The size last asked for to fit; frames wait until it is configured.
+    pub fitting: Option<PixelSize>,
+    /// The passive popup showing this surface's tooltip.
+    pub tooltip: Option<WindowId>,
 }
 
 pub(crate) struct Runtime {
@@ -111,6 +118,8 @@ impl Runtime {
         // background, so a translucent or rounded one shows the desktop.
         ui.root()
             .bind_color(ColorSlot::Background, Theme::BACKGROUND);
+        // A bar is too small to hold its tooltips: they become popups.
+        aegle_widgets::host_tooltips(&ui)?;
         let id = self.platform.create_window(options)?;
         let renderer = match self.presenter(id) {
             Ok(renderer) => renderer,
@@ -132,6 +141,9 @@ impl Runtime {
             ready: false,
             parent: options.popup.map(|p| p.parent),
             shape: Shape::default(),
+            fit: None,
+            fitting: None,
+            tooltip: None,
         });
         Ok((id, ui))
     }
@@ -200,12 +212,17 @@ impl Runtime {
     /// Lays out and records changed surfaces, asking for frames where pixels changed.
     pub fn refresh(&mut self) -> Result<()> {
         let now = self.clock.elapsed();
+        let mut tooltips = Vec::new();
         for entry in &mut self.entries {
             entry.ui.advance_animations(now)?;
             // Pastes answered at once land before this refresh records them.
             crate::input::sync_requests(&mut self.platform, entry);
             if entry.ui.refresh()? {
                 self.platform.request_redraw(entry.id)?;
+            }
+            fit(&mut self.platform, entry)?;
+            if let Some(change) = aegle_widgets::take_tooltip(&entry.ui) {
+                tooltips.push((entry.id, change));
             }
             // Regions are double-buffered: the next frame's commit carries them.
             if entry
@@ -220,6 +237,66 @@ impl Runtime {
                 entry.cursor = cursor;
             }
         }
+        for (id, tooltip) in tooltips {
+            self.show_tooltip(id, tooltip)?;
+        }
+        Ok(())
+    }
+
+    /// Replaces the tooltip popup of surface `id`: `None` only hides it.
+    fn show_tooltip(&mut self, id: WindowId, tooltip: Option<HostTooltip>) -> Result<()> {
+        let shown = self.entries.iter_mut().find(|e| e.id == id);
+        if let Some(old) = shown.and_then(|e| e.tooltip.take())
+            && self.entry(old).is_some()
+        {
+            self.close(old)?;
+        }
+        let Some(tooltip) = tooltip else {
+            return Ok(());
+        };
+        let mut anchor = tooltip.anchor;
+        anchor.size.width = anchor.size.width.max(1.0);
+        anchor.size.height = anchor.size.height.max(1.0);
+        // Wide enough to wrap only long text; then fitted to it.
+        let size = PixelSize {
+            width: 320,
+            height: 1,
+        };
+        let (popup, ui) = self.open(
+            WindowOptions {
+                title: "",
+                size,
+                popup: Some(aegle_platform::PopupOptions {
+                    parent: id,
+                    anchor,
+                    side: aegle_platform::Side::Below,
+                    grab: None,
+                }),
+                transparent: true,
+                ..Default::default()
+            },
+            size,
+        )?;
+        let root = ui.root();
+        root.set_background(Color::TRANSPARENT);
+        root.set_padding(0.0);
+        let bubble = root.column();
+        bubble.bind_color(ColorSlot::Background, Theme::SURFACE);
+        bubble.bind_color(ColorSlot::BorderColor, Theme::DIVIDER);
+        bubble.set_border_width(1.0);
+        bubble.set_radius(6.0);
+        bubble.set_padding(aegle_ui::Insets::new(4.0, 8.0, 4.0, 8.0));
+        aegle_widgets::Widgets::text(&bubble, &tooltip.text);
+        let entry = self
+            .entries
+            .iter_mut()
+            .find(|e| e.id == popup)
+            .expect("just opened");
+        fit_node(&bubble);
+        entry.fit = Some((*bubble).clone());
+        if let Some(parent) = self.entries.iter_mut().find(|e| e.id == id) {
+            parent.tooltip = Some(popup);
+        }
         Ok(())
     }
 
@@ -229,7 +306,8 @@ impl Runtime {
             entries, platform, ..
         } = self;
         for entry in entries.iter_mut() {
-            if !std::mem::take(&mut entry.ready) {
+            // A popup about to take its content's size draws at that size.
+            if entry.fitting.is_some() || !std::mem::take(&mut entry.ready) {
                 continue;
             }
             let id = entry.id;
@@ -276,4 +354,38 @@ impl Runtime {
         }
         Ok(())
     }
+}
+
+/// Lets `node` keep its content's size inside its surface's root, so the
+/// surface can take that size.
+pub(crate) fn fit_node(node: &Node) {
+    node.set_grow(0.0);
+    node.set_shrink(0.0);
+    node.set_align_self(aegle_ui::Align::Start);
+}
+
+/// Asks for the size of the surface's fitted node once it is laid out.
+fn fit(platform: &mut Wayland, entry: &mut Entry) -> Result<()> {
+    let Some(node) = entry.fit.as_ref().filter(|n| n.is_alive()) else {
+        return Ok(());
+    };
+    let info = platform.window_info(entry.id)?;
+    if !info.configured {
+        return Ok(());
+    }
+    let bounds = node.bounds();
+    let wanted = PixelSize {
+        width: (bounds.origin.x + bounds.size.width).ceil().max(1.0) as u32,
+        height: (bounds.origin.y + bounds.size.height).ceil().max(1.0) as u32,
+    };
+    if wanted == info.size || entry.fitting.is_some() {
+        return Ok(());
+    }
+    match platform.resize_popup(entry.id, wanted) {
+        Ok(()) => entry.fitting = Some(wanted),
+        // Too old a compositor: the popup keeps its first size.
+        Err(aegle_platform::Error::Unsupported(_)) => entry.fit = None,
+        Err(error) => return Err(error.into()),
+    }
+    Ok(())
 }

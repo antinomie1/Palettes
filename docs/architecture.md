@@ -33,7 +33,7 @@ Every surface has an aegle `WindowRenderer` on one shared Vulkan device and glyp
 
 ## Surfaces
 
-Only layer surfaces and xdg popups. A panel's placement (`PanelOptions`) can change in place; popups attach to a panel or another popup with a grab for menus. Removing a surface first drops its presenter, then its popups, then the Wayland objects. `Surface::on_close` callbacks run after the event that closed the surface, outside the runtime's borrow, whether the shell or the compositor closed it.
+Only layer surfaces and xdg popups. A panel's placement (`PanelOptions`) can change in place; popups attach to a panel or another popup with a grab for menus. A fitted popup (`Surface::fit`) lets one node keep its content's size; after each refresh a different size is asked for with `xdg_popup.reposition` (xdg-shell 3), and frames wait for the configure that applies it. Tooltips do not draw inside their window: aegle reports them (`aegle_widgets::host_tooltips`) and the shell shows each in a passive popup fitted to its text, below the control or flipped above it. Removing a surface first drops its presenter, then its popups, then the Wayland objects. `Surface::on_close` callbacks run after the event that closed the surface, outside the runtime's borrow, whether the shell or the compositor closed it.
 
 ## Subscriptions
 

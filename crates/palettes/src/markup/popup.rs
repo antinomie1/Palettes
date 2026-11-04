@@ -1,5 +1,7 @@
 //! Popup documents: a `Panel { edge: popup }` opens beside the control under
-//! the pointer, on the surface it is over, and closes with a click elsewhere.
+//! the pointer, on the surface it is over, and closes with a click elsewhere
+//! unless it is passive. It takes its content's size where `span` or `size`
+//! leave it open.
 
 use super::{Document, Open, Runner, attach, elements::Placement};
 use aegle_ui::{Color, Rect, Result};
@@ -47,12 +49,26 @@ pub(super) fn open(runner: &Runner, document: &mut Document) -> Result<()> {
         view,
     };
     attach(&runner.shell, &open, &document.states)?;
+    fit(&open, &document.placement)?;
     // Dismissed by a click elsewhere, or closed with its parent: the
     // document closes, and its script stops.
     let path = document.path.clone();
     open.surface.on_close(move || dismissed(path))?;
     document.panels.push(open);
     Ok(())
+}
+
+/// Sizes the popup to its `Panel`: `span` and `size` where set, its
+/// content elsewhere.
+pub(super) fn fit(open: &Open, placement: &Placement) -> Result<()> {
+    let panel = open.view.borrow().root().node().clone();
+    if placement.span > 0 {
+        panel.set_width(placement.span as f32);
+    }
+    if placement.size > 0 {
+        panel.set_height(placement.size as f32);
+    }
+    open.surface.fit(&panel)
 }
 
 fn dismissed(path: PathBuf) {

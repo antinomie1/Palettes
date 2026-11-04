@@ -25,7 +25,8 @@ pub enum Edge {
     /// Covering the output below every window.
     Background,
     /// A popup beside the control under the pointer, opened by
-    /// `host.toggle` or `host.open`: `span` wide (320 dp if 0), `size` tall.
+    /// `host.toggle` or `host.open`: `span` wide and `size` tall, or as
+    /// large as its content where they are 0.
     Popup,
 }
 
@@ -34,7 +35,8 @@ pub enum Edge {
 pub struct Placement {
     /// The edge.
     pub edge: Edge,
-    /// Thickness of a bar, or height of a centered panel, in dp.
+    /// Thickness of a bar, or height of a centered panel or popup, in dp;
+    /// 0 is 32 dp, or a popup's content height.
     pub size: u32,
     /// Length along the edge (or width of a centered panel); 0 stretches.
     pub span: u32,
@@ -49,19 +51,22 @@ pub struct Placement {
     pub offset: i32,
     /// The only output it appears on; empty for every output.
     pub output: String,
+    /// A popup without a grab: no keyboard, and clicks elsewhere keep it.
+    pub passive: bool,
 }
 
 impl Default for Placement {
     fn default() -> Self {
         Self {
             edge: Edge::Top,
-            size: 32,
+            size: 0,
             span: 0,
             layer: None,
             exclusive: None,
             keyboard: KeyboardInteractivity::None,
             offset: 0,
             output: String::new(),
+            passive: false,
         }
     }
 }
@@ -70,7 +75,7 @@ impl Placement {
     /// The surface placement this describes.
     pub fn options(&self) -> PanelOptions {
         use palettes_shell::Anchor as A;
-        let (size, span) = (self.size, self.span);
+        let (size, span) = (if self.size == 0 { 32 } else { self.size }, self.span);
         let bar = |anchor, stretched: PanelOptions, length: (u32, u32)| {
             if span == 0 {
                 stretched
@@ -98,8 +103,10 @@ impl Placement {
         options.keyboard(self.keyboard).margin([self.offset; 4])
     }
 
+    /// A popup's first width: wide enough that only long text wraps, until
+    /// it takes its content's size.
     fn popup_width(&self) -> u32 {
-        if self.span == 0 { 320 } else { self.span }
+        if self.span == 0 { 480 } else { self.span }
     }
 
     /// A popup's placement next to `anchor` on a surface placed by `parent`:
@@ -111,7 +118,12 @@ impl Placement {
             Edge::Right => Side::Left,
             Edge::Top | Edge::Center | Edge::Background => Side::Below,
         };
-        PopupOptions::below(anchor, self.popup_width(), self.size).side(side)
+        let options = PopupOptions::below(anchor, self.popup_width(), self.size.max(1)).side(side);
+        if self.passive {
+            options.passive()
+        } else {
+            options
+        }
     }
 }
 
@@ -304,13 +316,14 @@ element! {
         layout flex;
         create |parent| panel(parent);
         set edge: choice(top, bottom, left, right, center, background, popup) => |p, v| update(p, |s| s.edge = edge(v));
-        set size: length => |p, v| update(p, |s| s.size = v.max(1.0) as u32);
+        set size: length => |p, v| update(p, |s| s.size = v.max(0.0) as u32);
         set span: length => |p, v| update(p, |s| s.span = v.max(0.0) as u32);
         set layer: choice(background, bottom, top, overlay) => |p, v| update(p, |s| s.layer = Some(layer(v)));
         set exclusive: bool => |p, v| update(p, |s| s.exclusive = Some(v));
         set keyboard: choice(none, exclusive, on_demand) => |p, v| update(p, |s| s.keyboard = keyboard(v));
         set offset: length => |p, v| update(p, |s| s.offset = v as i32);
         set output: line => |p, v| update(p, |s| s.output = v.to_owned());
+        set passive: bool => |p, v| update(p, |s| s.passive = v);
         set blur: bool => set_blur;
     }
     /// An icon by theme name or application id, or an image path; `size` dp square.

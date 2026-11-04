@@ -66,6 +66,7 @@ impl Entry {
     pub fn event(&mut self, event: Event) -> Result<()> {
         match event {
             Event::Configure { info, .. } => {
+                self.fitting = None;
                 self.ui
                     .resize(Size::new(info.size.width as f32, info.size.height as f32));
             }

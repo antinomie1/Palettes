@@ -14,9 +14,9 @@ aegle-ui.workspace = true
 aegle-scene.workspace = true
 aegle-types.workspace = true
 aegle-render-vulkan.workspace = true
+aegle-widgets.workspace = true
 
 [dev-dependencies]
-aegle-widgets.workspace = true
 # Live tests drive the surfaces from a second client: virtual pointer and
 # keyboard, an input method, a clipboard manager.
 rustix = { version = "1", features = ["fs", "pipe", "std"] }

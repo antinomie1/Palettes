@@ -215,7 +215,9 @@ impl Document {
         for open in &self.panels {
             open.view.borrow_mut().reload(&loaded.program)?;
             attach(shell, open, &loaded.states)?;
-            if !popup {
+            if popup {
+                popup::fit(open, &placement)?;
+            } else {
                 open.surface
                     .set_placement(placement.options().on(open.output.id))?;
             }

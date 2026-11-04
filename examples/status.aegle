@@ -38,7 +38,7 @@ Panel {
         Icon { name: battery.icon; size: 18dp; visible: battery.present }
         Text { text: str(int(battery.percent * 100.0)) + "%"; visible: battery.present }
         for item in tray key item.id {
-            Icon { name: item.icon; size: 18dp }
+            Icon { name: item.icon; size: 18dp; tooltip: item.tooltip }
             Button { text: item.title; on clicked { host.tray_activate(item.id) } }
             Button {
                 text: "▾"

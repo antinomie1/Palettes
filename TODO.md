@@ -59,4 +59,4 @@ Beyond the services below: blurred image backgrounds.
 - [x] Popups from markup (`edge: popup`), `host.open` / `host.close`
 - [ ] Icons rasterized at the surface's scale rather than a fixed 64 px
 - [x] Luau scripts beside documents: shared states, actions, commands, timers, file watches
-- [ ] Passive popups (tooltips) and popups sized to their content
+- [x] Passive popups (tooltips) and popups sized to their content

@@ -14,7 +14,7 @@ use wayland_protocols::{
     },
     xdg::shell::client::{
         xdg_popup::{self, XdgPopup},
-        xdg_positioner::{Anchor as PAnchor, ConstraintAdjustment, Gravity},
+        xdg_positioner::{Anchor as PAnchor, ConstraintAdjustment, Gravity, XdgPositioner},
         xdg_surface::{self, XdgSurface},
     },
 };
@@ -33,6 +33,8 @@ pub(crate) enum Role {
     Popup {
         xdg: XdgSurface,
         popup: XdgPopup,
+        /// Kept to place it again at a new size.
+        options: PopupOptions,
     },
 }
 
@@ -231,6 +233,39 @@ impl State {
         if rect.size.width <= 0.0 || rect.size.height <= 0.0 {
             return Err(Error::InvalidSize);
         }
+        let positioner = self.positioner(&options, size)?;
+        let xdg = wm_base.get_xdg_surface(surface, &self.qh, id);
+        let popup = match &parent.role {
+            Role::Popup { xdg: parent, .. } => {
+                xdg.get_popup(Some(parent), &positioner, &self.qh, id)
+            }
+            Role::Layer { surface, .. } => {
+                let popup = xdg.get_popup(None, &positioner, &self.qh, id);
+                surface.get_popup(&popup);
+                popup
+            }
+        };
+        positioner.destroy();
+        if let Some(seat) = options.grab {
+            // A grab needs the serial of the press that opened the popup.
+            if let Some(seat) = self.seats.iter().find(|s| s.id == seat) {
+                popup.grab(&seat.seat, seat.last_serial);
+            }
+        }
+        Ok(Role::Popup {
+            xdg,
+            popup,
+            options,
+        })
+    }
+
+    /// Where a popup of `size` goes beside its anchor, flipped or slid to
+    /// stay on the output.
+    fn positioner(&self, options: &PopupOptions, size: PixelSize) -> Result<XdgPositioner> {
+        let wm_base = self.globals.wm_base.as_ref().ok_or(Error::Unsupported(
+            "popups: the compositor has no xdg-shell",
+        ))?;
+        let rect = options.anchor;
         let positioner = wm_base.create_positioner(&self.qh, ());
         positioner.set_size(size.width.max(1) as i32, size.height.max(1) as i32);
         positioner.set_anchor_rect(
@@ -253,25 +288,24 @@ impl State {
                 | ConstraintAdjustment::SlideX
                 | ConstraintAdjustment::SlideY,
         );
-        let xdg = wm_base.get_xdg_surface(surface, &self.qh, id);
-        let popup = match &parent.role {
-            Role::Popup { xdg: parent, .. } => {
-                xdg.get_popup(Some(parent), &positioner, &self.qh, id)
-            }
-            Role::Layer { surface, .. } => {
-                let popup = xdg.get_popup(None, &positioner, &self.qh, id);
-                surface.get_popup(&popup);
-                popup
-            }
+        Ok(positioner)
+    }
+
+    /// Asks for a popup of a new logical size, placed again beside its
+    /// anchor; the compositor's configure applies it. Without xdg-shell 3
+    /// a popup keeps its size.
+    pub fn resize_popup(&mut self, id: WindowId, size: PixelSize) -> Result<()> {
+        let window = self.window(id).ok_or(Error::InvalidWindow)?;
+        let Role::Popup { popup, options, .. } = &window.role else {
+            return Err(Error::InvalidRole("not a popup"));
         };
-        positioner.destroy();
-        if let Some(seat) = options.grab {
-            // A grab needs the serial of the press that opened the popup.
-            if let Some(seat) = self.seats.iter().find(|s| s.id == seat) {
-                popup.grab(&seat.seat, seat.last_serial);
-            }
+        if popup.version() < 3 {
+            return Err(Error::Unsupported("resizing popups before xdg-shell 3"));
         }
-        Ok(Role::Popup { xdg, popup })
+        let positioner = self.positioner(options, size)?;
+        popup.reposition(&positioner, 0);
+        positioner.destroy();
+        Ok(())
     }
 
     pub fn set_layer(
@@ -317,7 +351,7 @@ impl State {
         let window = self.windows.remove(index);
         match window.role {
             Role::Layer { surface, .. } => surface.destroy(),
-            Role::Popup { xdg, popup } => {
+            Role::Popup { xdg, popup, .. } => {
                 popup.destroy();
                 xdg.destroy();
             }
