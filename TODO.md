@@ -60,3 +60,16 @@ Beyond the services below: blurred image backgrounds (done: `Image { blur }`).
 - [x] Icons rasterized at the surface's scale rather than a fixed 64 px
 - [x] Luau scripts beside documents: shared states, actions, commands, timers, file watches
 - [x] Passive popups (tooltips) and popups sized to their content
+
+### Still missing
+
+- [ ] Polkit authentication agent (`org.freedesktop.PolicyKit1.AuthenticationAgent`)
+- [ ] greetd greeter: a login document over greetd's socket
+- [ ] Idle: ext-idle-notify-v1 as a state, idle-inhibit-v1 as an action
+- [ ] Popup gap from its control: `xdg_positioner.set_offset` in palettes-wayland
+- [ ] Scripts: Unix and TCP sockets; states that persist across restarts
+- [ ] Plain xdg-shell windows (settings apps), beside layer surfaces
+- [ ] Native IPC for Hyprland, niri and sway: window workspaces and `host.compositor`
+- [ ] Live output and window previews (ext-image-copy-capture / wlr-screencopy) for overviews
+- [ ] `palettes-shell --test input` fails under headless Pastel: text-input-v3 never
+      activates after Tab, with or without Pastel's startup overlay
