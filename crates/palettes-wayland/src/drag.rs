@@ -64,7 +64,11 @@ fn encode(data: &DragData) -> (&'static [&'static str], Vec<u8>) {
 
 impl State {
     fn over_mut(&mut self, global: u32) -> Option<(SeatId, &mut Over)> {
-        let device = self.clipboard.devices.iter_mut().find(|d| d.global == global)?;
+        let device = self
+            .clipboard
+            .devices
+            .iter_mut()
+            .find(|d| d.global == global)?;
         Some((device.seat, device.over.as_mut()?))
     }
 
@@ -87,7 +91,12 @@ impl State {
         position: Point,
         offer: Option<WlDataOffer>,
     ) {
-        let Some(device) = self.clipboard.devices.iter_mut().find(|d| d.global == global) else {
+        let Some(device) = self
+            .clipboard
+            .devices
+            .iter_mut()
+            .find(|d| d.global == global)
+        else {
             return;
         };
         if let Some(old) = device.over.take() {
@@ -117,7 +126,12 @@ impl State {
     }
 
     pub(crate) fn drag_leave(&mut self, global: u32) {
-        let Some(device) = self.clipboard.devices.iter_mut().find(|d| d.global == global) else {
+        let Some(device) = self
+            .clipboard
+            .devices
+            .iter_mut()
+            .find(|d| d.global == global)
+        else {
             return;
         };
         if let Some(over) = device.over.take() {
@@ -130,7 +144,12 @@ impl State {
     }
 
     pub(crate) fn drag_drop(&mut self, global: u32) {
-        let Some(device) = self.clipboard.devices.iter_mut().find(|d| d.global == global) else {
+        let Some(device) = self
+            .clipboard
+            .devices
+            .iter_mut()
+            .find(|d| d.global == global)
+        else {
             return;
         };
         let Some(over) = device.over.take() else {
@@ -190,14 +209,20 @@ impl State {
         serial: u32,
         data: &DragData,
     ) -> Result<(), Error> {
-        let surface = self.window(window).ok_or(Error::InvalidWindow)?.surface.clone();
+        let surface = self
+            .window(window)
+            .ok_or(Error::InvalidWindow)?
+            .surface
+            .clone();
         let (mimes, bytes) = encode(data);
         let source = self.clipboard.source(mimes, &self.qh)?;
         if source.version() >= 3 {
             source.set_actions(DndAction::Copy);
         }
         let device = self.clipboard.device(global)?;
-        device.device.start_drag(Some(&source), &surface, None, serial);
+        device
+            .device
+            .start_drag(Some(&source), &surface, None, serial);
         if let Some((old, _)) = self.clipboard.dragging.replace((source, bytes.into())) {
             old.destroy();
         }

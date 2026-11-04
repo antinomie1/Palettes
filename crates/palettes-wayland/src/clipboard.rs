@@ -294,7 +294,13 @@ impl Dispatch<WlDataDevice, u32> for State {
                 x,
                 y,
                 id,
-            } => state.drag_enter(*global, serial, &surface, Point::new(x as f32, y as f32), id),
+            } => state.drag_enter(
+                *global,
+                serial,
+                &surface,
+                Point::new(x as f32, y as f32),
+                id,
+            ),
             wl_data_device::Event::Motion { x, y, .. } => {
                 state.drag_motion(*global, Point::new(x as f32, y as f32));
             }

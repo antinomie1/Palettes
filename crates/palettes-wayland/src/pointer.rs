@@ -139,7 +139,6 @@ impl Seat {
             _ => {}
         }
     }
-
 }
 
 impl State {

@@ -107,13 +107,10 @@ impl Keyboard {
             .filter_map(std::env::var_os)
             .find(|v| !v.is_empty())
             .unwrap_or_else(|| "C".into());
-        self.compose = compose::Table::new_from_locale(
-            &self.context,
-            &locale,
-            compose::COMPILE_NO_FLAGS,
-        )
-        .ok()
-        .map(|table| compose::State::new(&table, compose::STATE_NO_FLAGS));
+        self.compose =
+            compose::Table::new_from_locale(&self.context, &locale, compose::COMPILE_NO_FLAGS)
+                .ok()
+                .map(|table| compose::State::new(&table, compose::STATE_NO_FLAGS));
     }
 
     /// The text a press types: what a compose sequence finishes, nothing

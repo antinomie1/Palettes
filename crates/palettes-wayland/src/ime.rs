@@ -107,8 +107,11 @@ impl Input {
             ChangeCause::Other
         });
         if let Some(text) = &request.surrounding {
-            self.object
-                .set_surrounding_text(text.clone(), request.cursor as i32, request.anchor as i32);
+            self.object.set_surrounding_text(
+                text.clone(),
+                request.cursor as i32,
+                request.anchor as i32,
+            );
         }
         self.object
             .set_cursor_rectangle(rect[0], rect[1], rect[2], rect[3]);
@@ -223,7 +226,11 @@ impl Ime {
         }
     }
 
-    pub fn configure(&mut self, window: WindowId, request: Option<ImeRequest>) -> Result<(), Error> {
+    pub fn configure(
+        &mut self,
+        window: WindowId,
+        request: Option<ImeRequest>,
+    ) -> Result<(), Error> {
         let next = request
             .map(|request| {
                 let rect = caret(&request)?;

@@ -97,7 +97,8 @@ impl Driver {
         let pointer = pointers.create_virtual_pointer(Some(&seat), &qh, ());
 
         let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-        let keymap = xkb::Keymap::new_from_names(&context, "evdev", "pc105", "us", "intl", None, 0)?;
+        let keymap =
+            xkb::Keymap::new_from_names(&context, "evdev", "pc105", "us", "intl", None, 0)?;
         let ctrl = 1 << keymap.mod_get_index(xkb::MOD_NAME_CTRL);
         let text = keymap.get_as_string(xkb::KEYMAP_FORMAT_TEXT_V1);
         let fd = rustix::fs::memfd_create("keymap", rustix::fs::MemfdFlags::CLOEXEC).ok()?;
@@ -139,7 +140,8 @@ impl Driver {
 
     fn point(&mut self, (x, y): (u32, u32), extent: (u32, u32)) {
         self.time += 10;
-        self.pointer.motion_absolute(self.time, x, y, extent.0, extent.1);
+        self.pointer
+            .motion_absolute(self.time, x, y, extent.0, extent.1);
         self.pointer.frame();
         self.connection.flush().unwrap();
     }
@@ -184,12 +186,7 @@ impl Driver {
 }
 
 /// Runs the shell and the driver for `time`, or until `done`.
-fn run(
-    shell: &Shell,
-    driver: &mut Driver,
-    time: Duration,
-    mut done: impl FnMut(&Driver) -> bool,
-) {
+fn run(shell: &Shell, driver: &mut Driver, time: Duration, mut done: impl FnMut(&Driver) -> bool) {
     let deadline = Instant::now() + time;
     while Instant::now() < deadline && !done(driver) {
         shell.dispatch(Some(Duration::from_millis(10))).unwrap();
@@ -203,7 +200,9 @@ fn session() -> Option<(Shell, Driver)> {
         return None;
     }
     let Some(driver) = Driver::new() else {
-        eprintln!("skipped: needs virtual-keyboard, input-method-v2, data-control, virtual-pointer");
+        eprintln!(
+            "skipped: needs virtual-keyboard, input-method-v2, data-control, virtual-pointer"
+        );
         return None;
     };
     Some((Shell::new().unwrap(), driver))
@@ -221,8 +220,13 @@ fn typing_composing_input_methods_and_the_clipboard() {
     field.set_grow(1.0);
     run(&shell, &mut driver, Duration::from_millis(800), |_| false);
     driver.tap(TAB, false);
-    run(&shell, &mut driver, Duration::from_secs(2), |d| d.heard.active);
-    assert!(driver.heard.active, "text input enabled for the focused field");
+    run(&shell, &mut driver, Duration::from_secs(2), |d| {
+        d.heard.active
+    });
+    assert!(
+        driver.heard.active,
+        "text input enabled for the focused field"
+    );
 
     driver.tap(A, false);
     // A dead key types nothing until the next key finishes the sequence.
@@ -230,17 +234,23 @@ fn typing_composing_input_methods_and_the_clipboard() {
     run(&shell, &mut driver, Duration::from_millis(200), |_| false);
     assert_eq!(field.text(), "a");
     driver.tap(E, false);
-    run(&shell, &mut driver, Duration::from_secs(1), |_| field.text() == "aé");
+    run(&shell, &mut driver, Duration::from_secs(1), |_| {
+        field.text() == "aé"
+    });
     assert_eq!(field.text(), "aé", "compose");
 
     driver.heard.commit = Some("中".into());
     driver.tap(A, false);
-    run(&shell, &mut driver, Duration::from_secs(1), |_| field.text().contains('中'));
+    run(&shell, &mut driver, Duration::from_secs(1), |_| {
+        field.text().contains('中')
+    });
     assert_eq!(field.text(), "aéa中", "the input method's commit");
 
     driver.own_clipboard("XY");
     driver.tap(V, true);
-    run(&shell, &mut driver, Duration::from_secs(1), |_| field.text().ends_with("XY"));
+    run(&shell, &mut driver, Duration::from_secs(1), |_| {
+        field.text().ends_with("XY")
+    });
     assert_eq!(field.text(), "aéa中XY", "pasted from another client");
 
     driver.tap(A, true);
@@ -250,13 +260,19 @@ fn typing_composing_input_methods_and_the_clipboard() {
         d.heard.selection.is_some() && d.heard.serves.is_empty()
     });
     run(&shell, &mut driver, Duration::from_millis(300), |_| false);
-    let read = driver.read_clipboard().expect("the shell took the selection");
+    let read = driver
+        .read_clipboard()
+        .expect("the shell took the selection");
     let mut copied = None;
     run(&shell, &mut driver, Duration::from_secs(2), |_| {
         copied = read.try_recv().ok();
         copied.is_some()
     });
-    assert_eq!(copied.as_deref(), Some("aéa中XY"), "copied for another client");
+    assert_eq!(
+        copied.as_deref(),
+        Some("aéa中XY"),
+        "copied for another client"
+    );
 }
 
 #[test]
@@ -287,7 +303,10 @@ fn drags_text_between_panels() {
     }
     driver.button(false);
     run(&shell, &mut driver, Duration::from_secs(2), |_| {
-        dropped.borrow().iter().any(|e| matches!(e, DropEvent::Drop { .. }))
+        dropped
+            .borrow()
+            .iter()
+            .any(|e| matches!(e, DropEvent::Drop { .. }))
     });
     let events = dropped.borrow();
     assert_eq!(events.first(), Some(&DropEvent::Enter));

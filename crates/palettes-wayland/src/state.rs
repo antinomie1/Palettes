@@ -1,6 +1,8 @@
 //! Globals, the registry and the small protocol objects every surface shares.
 
-use crate::{clipboard::Clipboard, cursor::Themes, ime::Ime, output::Output, pointer::Seat, window::Window};
+use crate::{
+    clipboard::Clipboard, cursor::Themes, ime::Ime, output::Output, pointer::Seat, window::Window,
+};
 use aegle_platform::{Event, OutputId, WindowId};
 use std::collections::VecDeque;
 use wayland_client::{

@@ -25,6 +25,10 @@ fn cursor_theme_follows_the_desktop_settings() {
     assert_eq!(cursor_theme(), ("breeze_cursors".into(), 48), "KDE's first");
 
     unsafe { std::env::set_var("XCURSOR_THEME", "Bibata") };
-    assert_eq!(cursor_theme(), ("Bibata".into(), 48), "the environment first");
+    assert_eq!(
+        cursor_theme(),
+        ("Bibata".into(), 48),
+        "the environment first"
+    );
     let _ = std::fs::remove_dir_all(config);
 }

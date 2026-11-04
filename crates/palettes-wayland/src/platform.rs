@@ -110,9 +110,8 @@ impl Platform for Wayland {
             queue.roundtrip(&mut state).map_err(backend)?;
         }
         state.events.retain(|e| !matches!(e, Event::Outputs));
-        let wake = Arc::new(
-            eventfd(0, EventfdFlags::CLOEXEC | EventfdFlags::NONBLOCK).map_err(backend)?,
-        );
+        let wake =
+            Arc::new(eventfd(0, EventfdFlags::CLOEXEC | EventfdFlags::NONBLOCK).map_err(backend)?);
         state.clipboard.wake = Some(Arc::clone(&wake));
         let mut preferences = Preferences::default();
         let portal = aegle_portal::connect(&mut preferences);
@@ -283,7 +282,9 @@ impl Platform for Wayland {
         self.state.window(window).ok_or(Error::InvalidWindow)?;
         let global = self.state.seat(seat)?.global;
         let state = &mut self.state;
-        state.clipboard.request(window, seat, global, &mut state.events)?;
+        state
+            .clipboard
+            .request(window, seat, global, &mut state.events)?;
         self.flush()
     }
 

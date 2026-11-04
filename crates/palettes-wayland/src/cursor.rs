@@ -97,7 +97,12 @@ impl Themes {
             surface.attach(Some(image), 0, 0);
             surface.damage_buffer(0, 0, width as i32, height as i32);
             surface.commit();
-            pointer.set_cursor(serial, Some(surface), (x / scale) as i32, (y / scale) as i32);
+            pointer.set_cursor(
+                serial,
+                Some(surface),
+                (x / scale) as i32,
+                (y / scale) as i32,
+            );
             return;
         }
     }
