@@ -37,6 +37,10 @@
 //   state wifi_networks: list<WifiNetwork>  in range, the active one first, then by strength
 //   state bluetooth: Bluetooth          BlueZ's first adapter
 //   state bluetooth_devices: list<BluetoothDevice>  named or paired; connected first
+//   state brightness: float             the backlight, 1.0 = full
+//   state backlight: bool               whether there is one
+//   state cpu: float                    processor use, 1.0 = 100 %, every 2 s
+//   state memory: Memory                memory use, every 2 s
 //
 // Host actions, for `on` blocks:
 //
@@ -63,6 +67,7 @@
 //   host.toggle_bluetooth()  host.bluetooth_scan(bool)
 //   host.bluetooth_connect(string)  host.bluetooth_disconnect(string)   by address
 //   host.bluetooth_pair(string)  host.bluetooth_forget(string)
+//   host.set_brightness(float)     0.0–1.0, through logind
 //   host.toggle(string)            open or close another panel document
 //   host.open(string)              open a document unless it is open
 //   host.close(string)             close a document if it is open
@@ -85,4 +90,5 @@ record MenuEntry { id: int; label: string; icon: string; enabled: bool; toggle: 
 record Network { kind: string; name: string; connected: bool; strength: int; wifi: bool; wifi_available: bool }
 record WifiNetwork { ssid: string; strength: int; secure: bool; active: bool; saved: bool }
 record Bluetooth { available: bool; powered: bool; scanning: bool }
+record Memory { used: int; total: int; percent: float }
 record BluetoothDevice { address: string; name: string; icon: string; paired: bool; connected: bool; battery: int }

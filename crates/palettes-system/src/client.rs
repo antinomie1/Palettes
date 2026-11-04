@@ -1,13 +1,16 @@
 //! A service's bus connection and thread: blocking calls that keep the
 //! signals arriving meanwhile, and a loop that waits on the bus, a wake pipe
-//! for commands and the service's next deadline.
+//! for commands, the service's next deadline and a file it watches.
 
 use aegle_dbus::{Connection, Incoming, Kind, Message, Value};
 use rustix::event::{PollFd, PollFlags, Timespec, poll};
 use std::{
     collections::{HashMap, VecDeque},
     io::{self, ErrorKind, Read, Write},
-    os::unix::net::UnixStream,
+    os::{
+        fd::{AsFd, BorrowedFd},
+        unix::net::UnixStream,
+    },
     sync::{Arc, mpsc},
     time::{Duration, Instant},
 };
@@ -63,6 +66,8 @@ pub(crate) enum Wake {
     Commands,
     /// The deadline passed.
     Expired,
+    /// The watched file changed.
+    Ready,
 }
 
 impl Client {
@@ -181,8 +186,14 @@ impl Client {
         reply.first().and_then(Value::as_str).map(str::to_owned)
     }
 
-    /// The next message, commands or the deadline, whichever is first.
-    fn wait(&mut self, wake: &UnixStream, deadline: Option<Instant>) -> io::Result<Wake> {
+    /// The next message, commands, the deadline or a change to `watched`,
+    /// whichever is first.
+    fn wait(
+        &mut self,
+        wake: &UnixStream,
+        deadline: Option<Instant>,
+        watched: Option<BorrowedFd<'_>>,
+    ) -> io::Result<Wake> {
         loop {
             while let Some(message) = self.incoming.take()? {
                 self.queue.push_back(message);
@@ -195,13 +206,19 @@ impl Client {
                 return Ok(Wake::Expired);
             }
             let timeout = timeout.map(|t| Timespec::try_from(t).unwrap_or(Timespec::default()));
+            // sysfs attributes announce changes as `POLLPRI`.
             let mut fds = [
                 PollFd::new(self.incoming.stream(), PollFlags::IN),
                 PollFd::new(wake, PollFlags::IN),
+                PollFd::from_borrowed_fd(watched.unwrap_or(wake.as_fd()), PollFlags::PRI),
             ];
-            match poll(&mut fds, timeout.as_ref()) {
+            let count = if watched.is_some() { 3 } else { 2 };
+            match poll(&mut fds[..count], timeout.as_ref()) {
                 Ok(_) | Err(rustix::io::Errno::INTR) => {}
                 Err(e) => return Err(e.into()),
+            }
+            if count == 3 && !fds[2].revents().is_empty() {
+                return Ok(Wake::Ready);
             }
             let (bus, woken) = (fds[0].revents(), fds[1].revents());
             if !woken.is_empty() {
@@ -242,6 +259,14 @@ pub(crate) trait Service: Send + 'static {
 
     /// The deadline passed.
     fn expired(&mut self, _bus: &mut Client) {}
+
+    /// A file to wait on beside the bus, such as a sysfs attribute.
+    fn watched(&self) -> Option<BorrowedFd<'_>> {
+        None
+    }
+
+    /// The watched file changed.
+    fn ready(&mut self, _bus: &mut Client) {}
 
     /// After each batch of messages and commands: report what changed.
     fn settle(&mut self, bus: &mut Client);
@@ -292,7 +317,7 @@ fn run<S: Service>(
     }
     service.settle(&mut bus);
     loop {
-        match bus.wait(&woken, service.deadline()) {
+        match bus.wait(&woken, service.deadline(), service.watched()) {
             Ok(Wake::Message(message)) => match message.kind {
                 Kind::Signal | Kind::Call => service.message(&mut bus, message),
                 Kind::Error => eprintln!("palettes: {name}: {}", remote_error(&message)),
@@ -306,6 +331,7 @@ fn run<S: Service>(
                 }
             },
             Ok(Wake::Expired) => service.expired(&mut bus),
+            Ok(Wake::Ready) => service.ready(&mut bus),
             Err(e) => {
                 eprintln!("palettes: {name}: {e}");
                 return;

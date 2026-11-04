@@ -35,6 +35,11 @@ Panel {
     state wifi_networks: list<WifiNetwork> = []
     state bluetooth: Bluetooth = Bluetooth(false, false, false)
     state bluetooth_devices: list<BluetoothDevice> = []
+    state brightness: float = 0.0
+    state backlight: bool = false
+    state cpu: float = 0.0
+    state memory: Memory = Memory(0, 0, 0.0)
+    state palette: list<string> = []
     Row {
         Text { text: str(len(notifications)) + " " + str(len(tray)) }
         Button { text: "x"; on clicked {
@@ -51,6 +56,7 @@ Panel {
             host.toggle_bluetooth()
             host.bluetooth_scan(true)
             host.bluetooth_pair("AA")
+            host.set_brightness(0.5)
         } }
     }
 }

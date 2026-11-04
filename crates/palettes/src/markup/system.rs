@@ -1,5 +1,6 @@
-//! System states and actions: battery, media, notifications, tray, network
-//! and bluetooth, each service started only for the states a document
+//! System states and actions: battery, media, notifications, tray, network,
+//! bluetooth, the backlight and processor and memory use, each service
+//! started only for the states a document
 //! declares or the actions it runs. Records carry icon files, looked up
 //! here from the names services report.
 
@@ -12,8 +13,9 @@ use aegle_loader::{Data, View, markup::Type};
 use aegle_ui::{Node, Result};
 use palettes_shell::Shell;
 use palettes_system::{
-    Battery, BatteryState, Bluetooth, BluetoothState, Control, Media, MediaState, Network,
-    NetworkState, Notifications, NotificationsState, Player, System, Tray, TrayState,
+    Battery, BatteryState, Bluetooth, BluetoothState, Brightness, BrightnessState, Control, Load,
+    LoadState, Media, MediaState, Network, NetworkState, Notifications, NotificationsState, Player,
+    System, Tray, TrayState,
 };
 use std::{cell::RefCell, rc::Rc};
 
@@ -52,6 +54,25 @@ const NOTIFICATIONS: &[&str] = &[
 const TRAY: &[&str] = &["tray", "tray_menu"];
 const NETWORK: &[&str] = &["network", "wifi_networks"];
 const BLUETOOTH: &[&str] = &["bluetooth", "bluetooth_devices"];
+const BRIGHTNESS: &[&str] = &["brightness", "backlight"];
+const LOAD: &[&str] = &["cpu", "memory"];
+
+fn brightness(view: &View, b: &BrightnessState) {
+    set(view, "brightness", Data::Float(b.level as f32));
+    set(view, "backlight", Data::Bool(b.present));
+}
+
+fn load(view: &View, l: &LoadState) {
+    const MIB: u64 = 1024 * 1024;
+    set(view, "cpu", Data::Float(l.cpu as f32));
+    let percent = l.memory_used as f64 / l.memory_total.max(1) as f64;
+    let memory = record([
+        int((l.memory_used / MIB) as i64),
+        int((l.memory_total / MIB) as i64),
+        Data::Float(percent as f32),
+    ]);
+    set(view, "memory", memory);
+}
 
 fn battery(view: &View, b: &BatteryState) {
     let battery = record([
@@ -244,6 +265,9 @@ pub(super) fn bind(shell: &Shell, shared: &Rc<RefCell<View>>, owner: &Node) -> R
     bind_one::<Tray>(shell, shared, owner, TRAY, tray, "tray");
     bind_one::<Network>(shell, shared, owner, NETWORK, network, "network");
     bind_one::<Bluetooth>(shell, shared, owner, BLUETOOTH, bluetooth, "bluetooth");
+    let b = BRIGHTNESS;
+    bind_one::<Brightness>(shell, shared, owner, b, brightness, "brightness");
+    bind_one::<Load>(shell, shared, owner, LOAD, load, "load");
     Ok(())
 }
 
@@ -347,5 +371,8 @@ pub(super) fn actions(shell: Option<&Shell>) {
     });
     on::<Bluetooth>(shell, "bluetooth_forget", &[String], |b, a| {
         b.forget(text(a, 0))
+    });
+    on::<Brightness>(shell, "set_brightness", &[Float], |b, a| {
+        b.set(number(a, 0))
     });
 }

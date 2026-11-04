@@ -1,7 +1,8 @@
 //! System services over D-Bus, each on its own thread and connection:
 //! battery and power profiles (UPower), media players (MPRIS), a
 //! notification server, a system tray (StatusNotifierItem and DBusMenu),
-//! network (NetworkManager) and bluetooth (BlueZ).
+//! network (NetworkManager), bluetooth (BlueZ) and the backlight (sysfs,
+//! set through logind); and processor and memory use from `/proc`.
 //!
 //! A service starts with [`System::spawn`], reads what it shows, then blocks
 //! on its bus until a signal changes it; it calls back with its whole state
@@ -10,8 +11,10 @@
 
 mod battery;
 mod bluetooth;
+mod brightness;
 mod client;
 mod link;
+mod load;
 mod media;
 mod network;
 mod notifications;
@@ -22,8 +25,10 @@ mod tray;
 pub use aegle_dbus::{Kind, Message, Value};
 pub use battery::{Battery, BatteryState, Charge};
 pub use bluetooth::{Bluetooth, BluetoothDevice, BluetoothState};
+pub use brightness::{BACKLIGHTS, Brightness, BrightnessState};
 pub use client::{Bus, CALL_TIMEOUT};
 pub use link::Link;
+pub use load::{Load, LoadState, cpu_times, memory};
 pub use media::{Control, Media, MediaState, Player};
 pub use network::{Network, NetworkState, WifiNetwork};
 pub use notifications::{Notification, Notifications, NotificationsState};

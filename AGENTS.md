@@ -46,8 +46,9 @@ crates/
                        directory, inotify watcher for hot reload. Pure.
   palettes-system/     D-Bus services on aegle-dbus, one thread and connection each:
                        battery and power profiles, MPRIS, notification server,
-                       tray (watcher/host, DBusMenu), NetworkManager, BlueZ;
-                       a plain `Link` for scripts.
+                       tray (watcher/host, DBusMenu), NetworkManager, BlueZ,
+                       backlight (sysfs + logind); `/proc` load; a plain
+                       `Link` for scripts.
   palettes-wayland/    Wayland client for shell surfaces: layer surfaces, popups,
                        outputs, seat input (compose, text-input-v3, clipboard,
                        drag and drop),

@@ -196,6 +196,10 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | `wifi_networks` | `list<WifiNetwork>` | Networks in range, the active one first, then by strength |
 | `bluetooth` | `Bluetooth` | BlueZ's first adapter |
 | `bluetooth_devices` | `list<BluetoothDevice>` | Named or paired devices, connected first, then paired |
+| `brightness` | `float` | The backlight's level, `1.0` = full; follows brightness keys and other programs |
+| `backlight` | `bool` | Whether there is a backlight |
+| `cpu` | `float` | Processor use, `1.0` = 100 %, sampled every 2 s |
+| `memory` | `Memory` | Memory use, sampled every 2 s |
 
 Workspaces and windows come from Pastel's IPC. Other compositors are read through Wayland protocols, each where offered: ext-workspace-v1 (niri, sway, KWin, …) for workspaces and `host.focus_workspace`, wlr-foreign-toplevel-management (sway, Hyprland, labwc, …) for windows, `host.focus_window` and `host.close_window`. These windows have no workspace (`Toplevel.workspace` is 0, `Workspace.windows` 0), and `host.compositor` is reported as unsupported. Without any of them, these states keep their defaults.
 
@@ -231,6 +235,7 @@ record MenuEntry { id: int; label: string; icon: string; enabled: bool; toggle: 
 record Network { kind: string; name: string; connected: bool; strength: int; wifi: bool; wifi_available: bool }
 record WifiNetwork { ssid: string; strength: int; secure: bool; active: bool; saved: bool }
 record Bluetooth { available: bool; powered: bool; scanning: bool }
+record Memory { used: int; total: int; percent: float }   // MiB; percent 1.0 = 100 %
 record BluetoothDevice { address: string; name: string; icon: string; paired: bool; connected: bool; battery: int }
 ```
 
@@ -264,6 +269,7 @@ record BluetoothDevice { address: string; name: string; icon: string; paired: bo
 | `host.toggle_bluetooth()`, `host.bluetooth_scan(bool)` | Power the adapter; look for devices |
 | `host.bluetooth_connect(string)`, `host.bluetooth_disconnect(string)` | By `BluetoothDevice.address` |
 | `host.bluetooth_pair(string)`, `host.bluetooth_forget(string)` | Pair and trust (devices that need a code typed are refused); remove |
+| `host.set_brightness(float)` | Set the backlight, `0.0`–`1.0`, through logind (no permissions needed) |
 | `host.toggle(string)` | Open another document, or close it if open |
 | `host.open(string)`, `host.close(string)` | Open a document unless open; close it if open |
 | `host.reload()` | Reload every document |
