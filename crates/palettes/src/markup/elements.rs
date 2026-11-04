@@ -6,7 +6,7 @@
 use aegle_loader::{Elements, element};
 use aegle_ui::{ColorSlot, Container, Node, NodeId, Theme};
 use aegle_widgets::{Fit, ImageView, ShaderView, Widgets};
-use palettes_shell::{KeyboardInteractivity, Layer, PanelOptions, Surface};
+use palettes_shell::{KeyboardInteractivity, Layer, PanelOptions, PopupOptions, Side, Surface};
 use std::{cell::RefCell, collections::HashMap};
 
 /// The edge of an output a panel sits on.
@@ -24,6 +24,9 @@ pub enum Edge {
     Center,
     /// Covering the output below every window.
     Background,
+    /// A popup beside the control under the pointer, opened by
+    /// `host.toggle` or `host.open`: `span` wide (320 dp if 0), `size` tall.
+    Popup,
 }
 
 /// Where a `Panel` document's surface goes, as its properties say.
@@ -83,6 +86,8 @@ impl Placement {
             Edge::Center => PanelOptions::overlay(if span == 0 { 480 } else { span }, size)
                 .keyboard(KeyboardInteractivity::None),
             Edge::Background => PanelOptions::background(),
+            // Popups are not layer surfaces; see `popup_options`.
+            Edge::Popup => PanelOptions::overlay(self.popup_width(), size),
         };
         if let Some(layer) = self.layer {
             options = options.layer(layer);
@@ -91,6 +96,22 @@ impl Placement {
             options = options.exclusive(0);
         }
         options.keyboard(self.keyboard).margin([self.offset; 4])
+    }
+
+    fn popup_width(&self) -> u32 {
+        if self.span == 0 { 320 } else { self.span }
+    }
+
+    /// A popup's placement next to `anchor` on a surface placed by `parent`:
+    /// away from the parent's edge, so a bottom bar's popups open above it.
+    pub fn popup_options(&self, anchor: aegle_ui::Rect, parent: &Placement) -> PopupOptions {
+        let side = match parent.edge {
+            Edge::Bottom => Side::Above,
+            Edge::Left | Edge::Popup => Side::Right,
+            Edge::Right => Side::Left,
+            Edge::Top | Edge::Center | Edge::Background => Side::Below,
+        };
+        PopupOptions::below(anchor, self.popup_width(), self.size).side(side)
     }
 }
 
@@ -138,7 +159,7 @@ fn update(container: &Container, change: impl FnOnce(&mut Placement)) {
         let surface = panel
             .surface
             .as_ref()
-            .filter(|_| panel.placement != before)?;
+            .filter(|_| panel.placement != before && panel.placement.edge != Edge::Popup)?;
         Some((surface.clone(), panel.placement.options()))
     });
     if let Some((surface, options)) = moved
@@ -192,6 +213,7 @@ fn edge(name: &str) -> Edge {
         "right" => Edge::Right,
         "center" => Edge::Center,
         "background" => Edge::Background,
+        "popup" => Edge::Popup,
         other => unreachable!("checked edge `{other}`"),
     }
 }
@@ -281,7 +303,7 @@ element! {
     pub Panel(Container) {
         layout flex;
         create |parent| panel(parent);
-        set edge: choice(top, bottom, left, right, center, background) => |p, v| update(p, |s| s.edge = edge(v));
+        set edge: choice(top, bottom, left, right, center, background, popup) => |p, v| update(p, |s| s.edge = edge(v));
         set size: length => |p, v| update(p, |s| s.size = v.max(1.0) as u32);
         set span: length => |p, v| update(p, |s| s.span = v.max(0.0) as u32);
         set layer: choice(background, bottom, top, overlay) => |p, v| update(p, |s| s.layer = Some(layer(v)));

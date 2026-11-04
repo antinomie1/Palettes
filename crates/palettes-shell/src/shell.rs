@@ -78,6 +78,8 @@ impl Shell {
             fonts: Rc::new(RefCell::new(TextSystem::system())),
             options,
             clock: Instant::now(),
+            closers: Vec::new(),
+            closed: Vec::new(),
         };
         Ok(Self(Rc::new(Inner {
             runtime: RefCell::new(runtime),
@@ -322,6 +324,10 @@ impl Shell {
     fn callbacks(&self) -> Result<()> {
         for ui in self.uis() {
             self.report(ui.dispatch_callbacks())?;
+        }
+        let closed = std::mem::take(&mut self.0.runtime.borrow_mut().closed);
+        for closer in closed {
+            closer();
         }
         Ok(())
     }

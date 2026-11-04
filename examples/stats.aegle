@@ -1,0 +1,47 @@
+// A floating pill: CPU and memory rings filled by stats.luau beside this
+// file, and a clock that opens calendar.aegle as a popup.
+// `cargo run -p palettes -- examples/stats.aegle`
+use "palettes.aegle"
+
+Panel {
+    edge: bottom
+    size: 44dp
+    span: 300dp
+    offset: 8dp
+    radius: 22dp
+    background: #313244e8
+    blur: true
+    padding: [0dp, 14dp]
+
+    state cpu: float = 0.0
+    state memory: float = 0.0
+    state time: string = ""
+
+    Row {
+        grow: 1
+        gap: 10dp
+        align: center
+        Stack {
+            Arc { width: 26dp; height: 26dp; stroke: #585b70; stroke_width: 4dp }
+            Arc { width: 26dp; height: 26dp; sweep: cpu * 360.0; stroke: #89b4fa
+                  stroke_width: 4dp; cap: round }
+        }
+        Text { text: "CPU " + str(int(cpu * 100.0)) + "%"; foreground: #cdd6f4 }
+        Stack {
+            Arc { width: 26dp; height: 26dp; stroke: #585b70; stroke_width: 4dp }
+            Arc { width: 26dp; height: 26dp; sweep: memory * 360.0; stroke: #f5c2e7
+                  stroke_width: 4dp; cap: round }
+        }
+        Text { text: "RAM " + str(int(memory * 100.0)) + "%"; foreground: #cdd6f4; grow: 1 }
+        Button {
+            text: time
+            radius: 14dp
+            padding: 6dp
+            background: #45475a
+            hover_background: #585b70
+            pressed_background: #6c7086
+            foreground: #cdd6f4
+            on clicked { host.toggle("calendar.aegle") }
+        }
+    }
+}

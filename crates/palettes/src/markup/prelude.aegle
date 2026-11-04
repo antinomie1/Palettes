@@ -34,8 +34,14 @@
 //   host.set_mic_volume(float)
 //   host.toggle_mic_mute()
 //   host.toggle(string)            open or close another panel document
+//   host.open(string)              open a document unless it is open
+//   host.close(string)             close a document if it is open
 //   host.reload()                  reload every document
 //   host.quit()
+//
+// A Luau script beside the document (`bar.luau` for `bar.aegle`) runs while it
+// is open: `state.name = value` fills states, its top-level functions are host
+// actions. `Panel { edge: popup }` opens beside the control under the pointer.
 
 record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
 record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool }

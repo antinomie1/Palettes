@@ -1,6 +1,6 @@
 # Panel documents
 
-A panel document is an aegle markup file whose root is a `Panel`. `palettes FILE...` (or `palettes::run`) opens each document on every output, or only on the one it names, and reloads it in place when any of its files is saved. Aegle's markup language itself (bindings, `if`, `for`, components, records) is described in aegle's `docs/markup.md`.
+A panel document is an aegle markup file whose root is a `Panel`. `palettes FILE...` (or `palettes::run`) opens each document on every output, or only on the one it names, and reloads it in place when any of its files is saved. A Luau script beside it (`bar.luau` for `bar.aegle`) runs while it is open; see [scripts.md](scripts.md). Aegle's markup language itself (bindings, `if`, `for`, components, records) is described in aegle's `docs/markup.md`.
 
 ```text
 use "palettes.aegle"
@@ -21,9 +21,9 @@ A column whose properties place its surface. All of them can be bound.
 
 | Property | Type | Default | Meaning |
 |---|---|---|---|
-| `edge` | `top` `bottom` `left` `right` `center` `background` | `top` | Where it sits. `center` is an overlay; `background` covers the output below windows |
-| `size` | length | `32dp` | Bar thickness; height of a `center` panel |
-| `span` | length | `0` | Length along the edge (width of a `center` panel); `0` stretches. A bar with a span is a dock |
+| `edge` | `top` `bottom` `left` `right` `center` `background` `popup` | `top` | Where it sits. `center` is an overlay; `background` covers the output below windows; `popup` opens beside a control (below) |
+| `size` | length | `32dp` | Bar thickness; height of a `center` panel or popup |
+| `span` | length | `0` | Length along the edge (width of a `center` panel or popup); `0` stretches, a popup is then 320dp wide. A bar with a span is a dock |
 | `layer` | `background` `bottom` `top` `overlay` | by edge | Stacking layer |
 | `exclusive` | bool | bars: true | Reserve its space so windows avoid it |
 | `keyboard` | `none` `exclusive` `on_demand` | `none` | Keyboard focus policy; launchers use `exclusive`. A focused `TextField` takes compose sequences (dead keys), input methods (text-input-v3) and the clipboard |
@@ -32,6 +32,25 @@ A column whose properties place its surface. All of them can be bound.
 | `blur` | bool | `false` | The compositor blurs the desktop behind the panel's rounded shape |
 
 Layout properties (`padding`, `gap`, `background`, …) apply as on `Column`.
+
+### Popups
+
+A document with `edge: popup` opens when `host.toggle` or `host.open` names it, beside the control under the pointer: above it on a bottom bar, beside it on a side bar or another popup, below it otherwise. It takes the keyboard while open, and a click outside the shell closes it, stopping its script. A popup opened from another popup is a submenu.
+
+```text
+// calendar.aegle, opened by `Button { text: time; on clicked { host.toggle("calendar.aegle") } }`
+Panel {
+    edge: popup
+    size: 232dp
+    span: 252dp
+    radius: 14dp
+    blur: true
+    state month: string = ""
+    Text { text: month }
+}
+```
+
+Popups share data with the panel that opened them through scripts (`state.month = ...` reaches every document declaring `month`); see [`examples/stats.aegle`](../examples/stats.aegle) and [`examples/calendar.aegle`](../examples/calendar.aegle).
 
 ### Visual effects
 
@@ -170,8 +189,11 @@ record App { id: string; name: string; icon: string }
 | `host.set_volume(float)`, `host.set_mic_volume(float)` | `0.0`–`1.5` |
 | `host.toggle_mute()`, `host.toggle_mic_mute()` | |
 | `host.toggle(string)` | Open another document, or close it if open |
+| `host.open(string)`, `host.close(string)` | Open a document unless open; close it if open |
 | `host.reload()` | Reload every document |
 | `host.quit()` | Exit |
+
+Functions a document's script defines are actions too: `host.greet("you")` calls `function greet(name)` in the script. `palettes msg ACTION [ARGUMENT...]` runs any action from the command line, such as `palettes msg toggle launcher.aegle` from a compositor keybinding; see [scripts.md](scripts.md).
 
 ## Assets
 

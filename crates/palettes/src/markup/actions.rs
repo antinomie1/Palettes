@@ -1,9 +1,76 @@
-//! Host actions: what `host.<name>(...)` in an `on` block does.
+//! Host actions: what `host.<name>(...)` does in an `on` block, in a
+//! script, and from `palettes msg`. Scripts add their own functions.
 
 use crate::services::{self, Services, audio_target};
-use aegle_loader::{Data, action, markup::Type};
+use aegle_loader::{Data, markup::Type};
 use aegle_ui::Result;
 use palettes_shell::Shell;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+type Run = Rc<dyn Fn(&[Data]) -> Result<()>>;
+
+thread_local! {
+    static ACTIONS: RefCell<HashMap<String, (Vec<Type>, Run)>> = RefCell::default();
+}
+
+/// Registers a Palettes action for markup, scripts and `palettes msg`.
+fn action(name: &str, params: &[Type], run: impl Fn(&[Data]) -> Result<()> + 'static) {
+    let run: Run = Rc::new(run);
+    let markup = run.clone();
+    aegle_loader::action(name, params, move |a: &[Data]| markup(a));
+    ACTIONS.with_borrow_mut(|actions| actions.insert(name.to_owned(), (params.to_vec(), run)));
+}
+
+/// The argument types of the Palettes action `name`.
+pub(crate) fn params(name: &str) -> Option<Vec<Type>> {
+    ACTIONS.with_borrow(|actions| actions.get(name).map(|(params, _)| params.clone()))
+}
+
+/// Runs the Palettes action `name`.
+pub(crate) fn call(name: &str, arguments: &[Data]) -> Result<()> {
+    let run = ACTIONS
+        .with_borrow(|actions| actions.get(name).map(|(_, run)| run.clone()))
+        .ok_or_else(|| format!("no action `{name}`"))?;
+    run(arguments)
+}
+
+/// Runs the action `name` with command-line arguments: a Palettes action
+/// parses them by its types, a script function gets numbers, booleans and
+/// strings. Returns what a script function returned, as text.
+pub(crate) fn call_text(name: &str, arguments: &[String]) -> Result<String> {
+    let Some(params) = params(name) else {
+        return crate::script::call_text(name, arguments);
+    };
+    if arguments.len() != params.len() {
+        return Err(format!("`{name}` takes {} arguments", params.len()).into());
+    }
+    let data = arguments
+        .iter()
+        .zip(&params)
+        .map(|(text, ty)| crate::script::convert::parse(text, ty))
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    call(name, &data)?;
+    Ok(String::new())
+}
+
+/// Lets markup call the functions scripts define: each `host.name(...)` that
+/// is no Palettes action calls the script function `name`, with the
+/// argument types of the call. In `check`, every such call is accepted.
+pub(crate) fn scripted(calls: &[aegle_loader::markup::HostCall], check: bool) {
+    for call in calls {
+        if params(&call.name).is_some() || !(check || crate::script::defines(&call.name)) {
+            continue;
+        }
+        let (name, types) = (call.name.clone(), call.types.clone());
+        aegle_loader::action(&call.name, &call.types, move |a: &[Data]| {
+            if check {
+                Ok(())
+            } else {
+                crate::script::call_data(&name, a, &types)
+            }
+        });
+    }
+}
 
 fn text(arguments: &[Data]) -> &str {
     match arguments.first() {
@@ -29,6 +96,8 @@ fn float(arguments: &[Data]) -> f32 {
 /// Registers every Palettes action for this thread's programs.
 pub(crate) fn register(shell: &Shell) {
     action("spawn", &[Type::String], |a| services::spawn(text(a)));
+    action("open", &[Type::String], |a| super::open_named(text(a)));
+    action("close", &[Type::String], |a| super::close_named(text(a)));
     action("launch", &[Type::String], |a| services::launch(text(a)));
     let compositor = |shell: &Shell, f: fn(&palettes_workspace::Compositor, &[Data])| {
         let shell = shell.clone();
@@ -87,13 +156,18 @@ pub(crate) fn register(shell: &Shell) {
     action("toggle", &[Type::String], |a| super::toggle(text(a)));
     action("reload", &[], |_| super::reload_all());
     let quit = shell.clone();
-    action("quit", &[], move |_| quit.quit());
+    action("quit", &[], move |_| {
+        quit.quit();
+        Ok(())
+    });
 }
 
 /// Registers every action as doing nothing, so documents check without a shell.
 pub(crate) fn declare() {
     for (name, params) in [
         ("spawn", &[Type::String][..]),
+        ("open", &[Type::String]),
+        ("close", &[Type::String]),
         ("launch", &[Type::String]),
         ("focus_workspace", &[Type::Int]),
         ("focus_window", &[Type::Int]),
@@ -107,6 +181,6 @@ pub(crate) fn declare() {
         ("reload", &[]),
         ("quit", &[]),
     ] {
-        action(name, params, |_| ());
+        action(name, params, |_| Ok(()));
     }
 }

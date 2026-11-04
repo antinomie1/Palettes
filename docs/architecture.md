@@ -33,7 +33,7 @@ Every surface has an aegle `WindowRenderer` on one shared Vulkan device and glyp
 
 ## Surfaces
 
-Only layer surfaces and xdg popups. A panel's placement (`PanelOptions`) can change in place; popups attach to a panel or another popup with a grab for menus. Removing a surface first drops its presenter, then its popups, then the Wayland objects.
+Only layer surfaces and xdg popups. A panel's placement (`PanelOptions`) can change in place; popups attach to a panel or another popup with a grab for menus. Removing a surface first drops its presenter, then its popups, then the Wayland objects. `Surface::on_close` callbacks run after the event that closed the surface, outside the runtime's borrow, whether the shell or the compositor closed it.
 
 ## Subscriptions
 
@@ -42,6 +42,18 @@ Services keep the latest value and a list of followers, each owned by a control.
 ## Markup
 
 The facade registers `Panel` and `Icon` elements and host actions on aegle's loader. Opening a document first builds it into a throwaway tree to read its `Panel` placement, then opens a surface per wanted output and builds it there. Shell states are matched by name; records come from the embedded prelude served for `use "palettes.aegle"`. A reload rebuilds each view in place (`View::reload`), re-attaches states, and moves surfaces to the new placement. Images, icons and shaders watch their own files: a change loads the file again into every view showing it, without rebuilding the document.
+
+A popup document (`edge: popup`) opens on the surface whose engine reports the pointer, anchored to the hovered node's bounds (the pointer itself over the panel's background), on the side away from that panel's edge. Its surface's close callback removes the document, so a dismissal stops its script.
+
+## Scripts
+
+One Luau VM per UI thread (mlua, vendored Luau). Each script gets its own globals table over a table of built-ins over Luau's libraries, so what it defines at top level is found with a raw lookup and is its set of host actions. Markup host calls that name no Palettes action are registered with aegle, with the call's argument types, as calls into whichever script defines the function then; documents are therefore checked after their script ran, and reloaded when it is saved.
+
+Shared states: views link their entry states (`markup::link`). A script assignment converts the Luau value by each linked view's declared type and sets it there; it is also kept, so views linked later start with it. Each linked state has a change handler that hands the new value to the runtime, which skips its own assignments and runs watches. Commands, timers and line readers run on their own threads and report through a shell channel to the UI thread; each belongs to its script and stops (commands by process group) when the script unloads.
+
+## Messages
+
+`palettes msg` connects to `$XDG_RUNTIME_DIR/palettes-$WAYLAND_DISPLAY.sock`. An accept thread hands each connection to a thread that reads JSON lines and sends each request through a shell channel; the UI thread runs the action (Palettes' own, arguments parsed by its types, else a script function) and replies over a one-shot channel. A second instance finds the socket answering and leaves it alone.
 
 ## Pastel
 

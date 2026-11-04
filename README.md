@@ -6,6 +6,9 @@ A Wayland desktop shell and widget library in Rust: bars, docks, launchers, popu
 
 - **Markup panels**: one `.aegle` file per panel, opened on every output, reloaded in place on save
 - **Shell state by name**: declare `state time`, `state workspaces`, `state volume`… and it stays current
+- **Luau scripts**: `bar.luau` beside `bar.aegle` fills states, defines actions, runs commands, timers and file watches; saving reloads it
+- **Popups**: `Panel { edge: popup }` opens beside the clicked control and closes with a click elsewhere
+- **Command line**: `palettes msg toggle launcher.aegle` or any action, for compositor keybindings
 - **Automatic assets**: theme icons by name or app id (SVG included), fonts from `fonts/`, paths relative to the document
 - **Services**: clock, workspaces and windows (Pastel IPC; on other compositors through ext-workspace-v1 and wlr-foreign-toplevel-management), PipeWire volume and mute, installed applications
 - **Glass and curves**: rounded, translucent panels with the desktop blurred behind them (`radius`, `background: #1e1e2ea0`, `opacity`, `blur: true`), on compositors with ext-background-effect-v1 such as KWin and Pastel
@@ -38,7 +41,20 @@ palettes bar.aegle            # or put it in ~/.config/palettes/shell.aegle and 
 palettes --check bar.aegle    # check without opening
 ```
 
-States, records, actions and placement are listed in [docs/markup.md](docs/markup.md).
+`bar.luau` beside it, for data no service provides:
+
+```lua
+-- Fills `state disk: string` in every document that declares it.
+every(60, function()
+    exec("df --output=pcent / | tail -1", function(out)
+        state.disk = (out:gsub("%s", ""))
+    end)
+end)
+
+function lock() host.spawn("swaylock") end   -- markup: host.lock()
+```
+
+States, records, actions and placement are listed in [docs/markup.md](docs/markup.md); scripts in [docs/scripts.md](docs/scripts.md).
 
 ## Rust
 
@@ -80,7 +96,7 @@ cargo run --release -p palettes --example bar
 | `palettes-workspace` | Compositor-neutral workspaces and windows; Pastel backend |
 | `palettes-audio` | PipeWire default sink and source |
 | `palettes-assets` | Asset roots, icon themes, desktop entries, file watching |
-| `palettes` | Facade, services, markup integration, the `palettes` command |
+| `palettes` | Facade, services, markup integration, Luau scripts, the `palettes` command |
 
 Design notes: [docs/architecture.md](docs/architecture.md). Contributing: [AGENTS.md](AGENTS.md). Roadmap: [TODO.md](TODO.md).
 

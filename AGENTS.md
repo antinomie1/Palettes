@@ -17,6 +17,7 @@ surfaces. It works with any wlr-layer-shell compositor and integrates deeply wit
 cargo build                          # needs libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan loader
 cargo test                           # every crate's tests/; live parts skip without WAYLAND_DISPLAY / PipeWire
 cargo test -p palettes-shell --test input -- --ignored   # typing, IME, clipboard, drag; headless Pastel only
+cargo test -p palettes --test popup -- --ignored         # clicks a popup open and closed; headless Pastel only
 cargo run -p palettes --example bar  # the Rust bar on every output
 cargo run -p palettes -- examples/bar.aegle    # the markup runner; save the file to reload
 cargo run -p palettes -- --check examples/bar.aegle
@@ -28,7 +29,8 @@ Screenshots need a compositor with screencopy. KDE has none; use a headless Past
 then run against its `WAYLAND_DISPLAY` and capture with `grim`.
 
 Read `docs/architecture.md` before changing the loop, surfaces or services, and keep
-`docs/markup.md` in step with states, records, actions and `Panel` properties.
+`docs/markup.md` in step with states, records, actions and `Panel` properties, and
+`docs/scripts.md` with the Luau built-ins.
 
 ## Layout of the code
 
@@ -50,7 +52,8 @@ crates/
   palettes-shell/      The host: Shell, Panel, Popup, Vulkan presentation, timers,
                        cross-thread channels. aegle-ui trees on palettes-wayland.
   palettes/            Facade: services wired into the shell, markup integration
-                       (Panel element, shell states, host actions), the runner binary.
+                       (Panel element, shell states, host actions, popups), Luau
+                       scripts beside documents, `palettes msg` IPC, the runner binary.
 ```
 
 Service crates (`clock`, `workspace`, `audio`, `assets`) know nothing about aegle or Wayland.

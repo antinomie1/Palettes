@@ -6,16 +6,19 @@
 //! the embedded prelude unless such a file exists. Relative image paths
 //! resolve against the first document's directory, and fonts in any asset
 //! root's `fonts/` are registered at start. Images, icons and shaders show
-//! their files again when those change.
+//! their files again when those change. A script beside a document
+//! (`bar.luau` for `bar.aegle`) runs while it is open.
 
-mod actions;
+pub(crate) mod actions;
 pub mod elements;
 mod follow;
 pub mod image;
+pub(crate) mod link;
+mod popup;
 mod shader;
 pub mod states;
 
-use aegle_loader::{Elements, Program, View};
+use aegle_loader::{Elements, Program, View, markup::Type};
 use aegle_ui::{Node, Result, Theme, Ui};
 use palettes_assets::{Roots, Watcher};
 use palettes_shell::{OutputInfo, Shell, Surface};
@@ -34,7 +37,13 @@ struct Open {
 
 struct Document {
     path: PathBuf,
+    /// The script running beside it.
+    script: Option<PathBuf>,
     program: Program,
+    /// Entry states, which scripts share.
+    states: Vec<(String, Type)>,
+    /// Where its `Panel` asked to go, as of the last build.
+    placement: elements::Placement,
     /// Every file's text, to tell a real change from a duplicate event.
     sources: String,
     files: Vec<PathBuf>,
@@ -73,11 +82,19 @@ pub(crate) fn roots() -> Roots {
         .unwrap_or_else(|| Roots::new(None))
 }
 
-/// Reads `path` and its imports, serving the prelude for `palettes.aegle`.
-fn load(path: &Path, elements: &Elements) -> Result<(Program, String, Vec<PathBuf>)> {
+struct Loaded {
+    program: Program,
+    sources: String,
+    files: Vec<PathBuf>,
+    states: Vec<(String, Type)>,
+}
+
+/// Reads `path` and its imports, serving the prelude for `palettes.aegle`,
+/// and lets its host calls reach script functions.
+fn load(path: &Path, elements: &Elements, check: bool) -> Result<Loaded> {
     let entry = path.to_str().ok_or("document path is not UTF-8")?;
     let (mut files, mut sources) = (Vec::new(), String::new());
-    let program = Program::from_sources(entry, elements, &mut |name| {
+    let mut read = |name: &str| {
         let file = Path::new(name);
         match std::fs::read_to_string(file) {
             Ok(text) => {
@@ -90,8 +107,21 @@ fn load(path: &Path, elements: &Elements) -> Result<(Program, String, Vec<PathBu
             }
             Err(e) => Err(format!("{name}: {e}")),
         }
-    })?;
-    Ok((program, sources, files))
+    };
+    let (checked, _) = aegle_loader::markup::compile(entry, &elements.specs(), &mut read)?;
+    link::learn(&checked.records);
+    actions::scripted(&checked.host_calls, check);
+    let states = checked.templates[0]
+        .states
+        .iter()
+        .map(|(name, ty, _)| (name.clone(), ty.clone()))
+        .collect();
+    Ok(Loaded {
+        program: Program::from_checked(checked, elements),
+        sources,
+        files,
+        states,
+    })
 }
 
 /// Where the document's panel goes, from a throwaway build of it.
@@ -106,6 +136,7 @@ fn probe(shell: &Shell, program: &Program) -> Result<elements::Placement> {
 fn open_panel(
     shell: &Shell,
     program: &Program,
+    states: &[(String, Type)],
     output: &OutputInfo,
     placement: &elements::Placement,
 ) -> Result<Open> {
@@ -126,19 +157,26 @@ fn open_panel(
         surface,
         view,
     };
-    attach(shell, &open)?;
+    attach(shell, &open, states)?;
     Ok(open)
 }
 
-/// Ties a freshly built view to its surface and the shell's states.
-fn attach(shell: &Shell, open: &Open) -> Result<()> {
+/// Ties a freshly built view to its surface, the shell's states and scripts.
+fn attach(shell: &Shell, open: &Open, entry: &[(String, Type)]) -> Result<()> {
     let root: Node = open.view.borrow().root().node().clone();
     elements::attach(&root, &open.surface);
-    states::bind(shell, &open.view, &root, &open.output.name)
+    states::bind(shell, &open.view, &root, &open.output.name)?;
+    link::link(&open.view, entry);
+    Ok(())
 }
 
 impl Document {
-    /// Opens panels on outputs that lack one and closes those of departed outputs.
+    fn is_popup(&self) -> bool {
+        self.placement.edge == elements::Edge::Popup
+    }
+
+    /// Opens panels on outputs that lack one and closes those of departed
+    /// outputs. A popup opens only when asked to.
     fn sync(&mut self, shell: &Shell) -> Result<()> {
         let outputs = shell.outputs();
         self.panels.retain(|open| {
@@ -149,13 +187,17 @@ impl Document {
             keep
         });
         let placement = probe(shell, &self.program)?;
+        self.placement = placement.clone();
+        if self.is_popup() {
+            return Ok(());
+        }
         for output in outputs {
             let wanted = placement.output.is_empty() || placement.output == output.name;
             if !wanted || self.panels.iter().any(|p| p.output.id == output.id) {
                 continue;
             }
-            self.panels
-                .push(open_panel(shell, &self.program, &output, &placement)?);
+            let open = open_panel(shell, &self.program, &self.states, &output, &placement)?;
+            self.panels.push(open);
         }
         Ok(())
     }
@@ -163,16 +205,19 @@ impl Document {
     /// Rebuilds every panel from the files on disk, keeping states and
     /// surfaces; an error keeps what is shown.
     fn reload(&mut self, shell: &Shell, elements: &Elements, force: bool) -> Result<()> {
-        let (program, sources, files) = load(&self.path, elements)?;
-        if sources == self.sources && !force {
+        let loaded = load(&self.path, elements, false)?;
+        if loaded.sources == self.sources && !force {
             return Ok(());
         }
-        let placement = probe(shell, &program)?;
+        let placement = probe(shell, &loaded.program)?;
+        let popup = placement.edge == elements::Edge::Popup;
         for open in &self.panels {
-            open.view.borrow_mut().reload(&program)?;
-            attach(shell, open)?;
-            open.surface
-                .set_placement(placement.options().on(open.output.id))?;
+            open.view.borrow_mut().reload(&loaded.program)?;
+            attach(shell, open, &loaded.states)?;
+            if !popup {
+                open.surface
+                    .set_placement(placement.options().on(open.output.id))?;
+            }
         }
         // A changed `output` closes and opens panels.
         self.panels.retain(|open| {
@@ -182,11 +227,15 @@ impl Document {
             }
             keep
         });
-        (self.program, self.sources, self.files) = (program, sources, files);
+        (self.program, self.sources, self.files, self.states) =
+            (loaded.program, loaded.sources, loaded.files, loaded.states);
         self.sync(shell)
     }
 
     fn close(self) {
+        if let Some(script) = &self.script {
+            crate::script::unload(script);
+        }
         for open in self.panels {
             if open.surface.is_open() {
                 let _ = open.surface.close();
@@ -208,23 +257,65 @@ fn with_runner<T>(f: impl FnOnce(&mut Runner) -> Result<T>) -> Result<T> {
 
 fn open_document(runner: &mut Runner, path: &Path) -> Result<()> {
     let path = std::fs::canonicalize(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let (program, sources, files) = load(&path, &runner.elements)?;
-    files.iter().for_each(|file| watch(file));
-    let mut document = Document {
-        path,
-        program,
-        sources,
-        files,
-        panels: Vec::new(),
-    };
-    document.sync(&runner.shell)?;
-    runner.documents.push(document);
-    Ok(())
+    // The script runs first: the document may call its functions and show
+    // what it sets.
+    let script = crate::script::beside(&path);
+    if let Some(script) = &script {
+        watch(script);
+        if let Err(e) = crate::script::load(script) {
+            eprintln!("palettes: {e}");
+        }
+    }
+    let opened = load(&path, &runner.elements, false).and_then(|loaded| {
+        loaded.files.iter().for_each(|file| watch(file));
+        let mut document = Document {
+            path,
+            script: script.clone(),
+            program: loaded.program,
+            states: loaded.states,
+            sources: loaded.sources,
+            files: loaded.files,
+            placement: elements::Placement::default(),
+            panels: Vec::new(),
+        };
+        let opened = probe(&runner.shell, &document.program).and_then(|placement| {
+            document.placement = placement;
+            if document.is_popup() {
+                popup::open(runner, &mut document)
+            } else {
+                document.sync(&runner.shell)
+            }
+        });
+        match opened {
+            Ok(()) => Ok(document),
+            Err(e) => {
+                document.close();
+                Err(e)
+            }
+        }
+    });
+    match opened {
+        Ok(document) => {
+            runner.documents.push(document);
+            Ok(())
+        }
+        Err(e) => {
+            if let Some(script) = &script {
+                crate::script::unload(script);
+            }
+            Err(e)
+        }
+    }
 }
 
 fn changed(path: &Path) -> Result<()> {
     image::changed(path);
     shader::changed(path);
+    crate::script::file_changed(path);
+    let script = crate::script::is_script(path);
+    if script && let Err(e) = crate::script::load(path) {
+        eprintln!("palettes: {e}");
+    }
     with_runner(|runner| {
         let Runner {
             shell,
@@ -234,9 +325,10 @@ fn changed(path: &Path) -> Result<()> {
         } = runner;
         for document in documents
             .iter_mut()
-            .filter(|d| d.files.iter().any(|f| f == path))
+            .filter(|d| d.files.iter().any(|f| f == path) || d.script.as_deref() == Some(path))
         {
-            if let Err(e) = document.reload(shell, elements, false) {
+            // A script may now define the functions the document calls.
+            if let Err(e) = document.reload(shell, elements, script) {
                 eprintln!("palettes: keeping {}: {e}", document.path.display());
             }
         }
@@ -252,30 +344,56 @@ fn changed(path: &Path) -> Result<()> {
 /// Parses and checks a document and its imports without opening it.
 pub fn check(path: &Path) -> Result<()> {
     actions::declare();
-    let (program, _, _) = load(path, &elements::elements())?;
+    let script = crate::script::beside(path);
+    if let Some(script) = &script {
+        crate::script::check(script)?;
+    }
+    let loaded = load(path, &elements::elements(), script.is_some())?;
     // Host calls are only checked when a view is built.
     let fonts = Rc::new(RefCell::new(aegle_ui::TextSystem::new()));
     let ui = Ui::with_fonts(fonts, Theme::default())?;
-    program.build(&ui.root())?;
+    loaded.program.build(&ui.root())?;
     ui.close();
     Ok(())
 }
 
-/// Opens the document at `name` (resolved like any asset), or closes it if open.
-pub fn toggle(name: &str) -> Result<()> {
+/// The document file `name` names, resolved like any asset.
+fn document_path(name: &str) -> Result<PathBuf> {
     let path = roots()
         .resolve(name)
         .ok_or_else(|| format!("no document `{name}`"))?;
-    let path = std::fs::canonicalize(&path)?;
-    with_runner(
-        |runner| match runner.documents.iter().position(|d| d.path == path) {
-            Some(index) => {
+    Ok(std::fs::canonicalize(&path)?)
+}
+
+/// Opens or closes the document `name`, or flips it when `want` is `None`.
+fn show(name: &str, want: Option<bool>) -> Result<()> {
+    let path = document_path(name)?;
+    with_runner(|runner| {
+        let index = runner.documents.iter().position(|d| d.path == path);
+        match (index, want) {
+            (Some(index), None | Some(false)) => {
                 runner.documents.remove(index).close();
                 Ok(())
             }
-            None => open_document(runner, &path),
-        },
-    )
+            (None, None | Some(true)) => open_document(runner, &path),
+            _ => Ok(()),
+        }
+    })
+}
+
+/// Opens the document at `name` (resolved like any asset), or closes it if open.
+pub fn toggle(name: &str) -> Result<()> {
+    show(name, None)
+}
+
+/// Opens the document at `name` unless it is open.
+pub(crate) fn open_named(name: &str) -> Result<()> {
+    show(name, Some(true))
+}
+
+/// Closes the document at `name` if it is open.
+pub(crate) fn close_named(name: &str) -> Result<()> {
+    show(name, Some(false))
 }
 
 /// Reloads every document from disk.
@@ -314,6 +432,8 @@ impl Documents {
     /// library's: `elements::elements()` extended with `.with::<E>()`.
     pub fn with(shell: Shell, elements: Elements) -> Result<Self> {
         actions::register(&shell);
+        crate::script::start(&shell)?;
+        crate::ipc::serve(&shell);
         let reloads = shell.channel(|_, path: PathBuf| changed(&path));
         let watcher = Watcher::spawn(move |path| reloads.send(path))
             .inspect_err(|e| eprintln!("palettes: no hot reload: {e}"))

@@ -1,0 +1,31 @@
+// A popup: the clock in stats.aegle opens it beside itself; a click elsewhere
+// closes it. calendar.luau fills the month.
+record Day { index: int; label: string; today: bool }
+
+Panel {
+    edge: popup
+    size: 232dp
+    span: 252dp
+    radius: 14dp
+    background: #313244f2
+    blur: true
+    padding: 12dp
+    gap: 8dp
+
+    state month: string = ""
+    state days: list<Day> = []
+
+    Text { text: month; foreground: #cdd6f4; font_size: 15dp }
+    Grid {
+        columns: [repeat(7, 1fr)]
+        gap: 4dp
+        for day in days key day.index {
+            if day.today {
+                Text { text: day.label; foreground: #1e1e2e; background: #89b4fa
+                       radius: 6dp; padding: 2dp; justify_self: center }
+            } else {
+                Text { text: day.label; foreground: #bac2de; justify_self: center }
+            }
+        }
+    }
+}

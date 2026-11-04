@@ -42,6 +42,16 @@ impl Surface {
         self.inner()?.runtime.borrow_mut().close(self.id)
     }
 
+    /// Runs `closer` once the surface closes, by [`Self::close`] or because
+    /// the compositor dismissed it, as it does popups clicked away from.
+    pub fn on_close(&self, closer: impl FnOnce() + 'static) -> Result<()> {
+        let inner = self.inner()?;
+        let mut runtime = inner.runtime.borrow_mut();
+        runtime.entry(self.id).ok_or(UiError::DeadHandle)?;
+        runtime.closers.push((self.id, Box::new(closer)));
+        Ok(())
+    }
+
     /// The surface's engine, for key handlers and whole-surface settings.
     pub fn ui(&self) -> Result<Rc<Ui>> {
         let inner = self.inner()?;

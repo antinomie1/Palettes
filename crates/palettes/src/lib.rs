@@ -29,7 +29,9 @@
 //! }
 //! ```
 
+pub mod ipc;
 pub mod markup;
+mod script;
 mod services;
 
 pub use aegle_loader as loader;

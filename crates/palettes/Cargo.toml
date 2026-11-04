@@ -25,7 +25,15 @@ aegle-ui.workspace = true
 aegle-widgets.workspace = true
 aegle-loader.workspace = true
 aegle-image = { workspace = true, optional = true }
+mlua = { version = "0.12", features = ["luau", "serialize"] }
+serde_json = "1"
+rustix = { version = "1", features = ["process", "std"] }
 am3 = { git = "https://github.com/antinomie1/am3", branch = "master", optional = true }
+
+[dev-dependencies]
+# The popup test points and clicks from a second client.
+wayland-client.workspace = true
+wayland-protocols-wlr.workspace = true
 
 [lints]
 workspace = true

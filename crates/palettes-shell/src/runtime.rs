@@ -48,6 +48,10 @@ pub(crate) struct Runtime {
     pub options: ShellOptions,
     pub preferences: Preferences,
     pub clock: Instant,
+    /// What to run when a surface closes, by surface.
+    pub closers: Vec<(WindowId, Box<dyn FnOnce()>)>,
+    /// Closers of closed surfaces, run outside the runtime's borrow.
+    pub closed: Vec<Box<dyn FnOnce()>>,
 }
 
 /// Scales the UI's logical scenes to device pixels.
@@ -167,6 +171,11 @@ impl Runtime {
             .position(|e| e.id == id)
             .ok_or(aegle_ui::UiError::DeadHandle)?;
         let mut entry = self.entries.remove(index);
+        let (closers, kept) = std::mem::take(&mut self.closers)
+            .into_iter()
+            .partition::<Vec<_>, _>(|(window, _)| *window == id);
+        self.closers = kept;
+        self.closed.extend(closers.into_iter().map(|(_, f)| f));
         entry.ui.close();
         drop(entry.renderer.take());
         self.platform.remove_window(id)?;
