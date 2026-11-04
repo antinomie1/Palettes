@@ -163,8 +163,40 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | `muted`, `mic_muted` | `bool` | |
 | `audio_device` | `string` | Default output's description |
 | `applications` | `list<App>` | Launchable applications, sorted by name |
+| `battery` | `Battery` | UPower's display device and whether the system runs on battery |
+| `power_profile` | `string` | `power-saver`, `balanced` or `performance` (power-profiles-daemon) |
+| `power_profiles` | `list<string>` | The profiles to choose from |
+| `media` | `Player` | The MPRIS player that last started playing, else the first |
+| `players` | `list<Player>` | Every player, by name |
+| `media_position` | `float` | `media`'s position in seconds; declaring it updates it each second while playing |
+| `notifications` | `list<Notification>` | Notifications, newest first; Palettes is the notification server |
+| `notification_popups` | `list<Notification>` | Those still shown as popups: new, for 5 s unless critical |
+| `notification_actions` | `list<NotificationAction>` | Their buttons, by notification id |
+| `tray` | `list<TrayItem>` | Status notifier items, in registration order |
+| `tray_menu` | `list<MenuEntry>` | The menu `host.tray_menu` read, submenus flattened by `depth` |
+| `network` | `Network` | NetworkManager's primary connection and Wi-Fi |
+| `wifi_networks` | `list<WifiNetwork>` | Networks in range, the active one first, then by strength |
+| `bluetooth` | `Bluetooth` | BlueZ's first adapter |
+| `bluetooth_devices` | `list<BluetoothDevice>` | Named or paired devices, connected first, then paired |
 
 Workspaces and windows come from Pastel's IPC. Other compositors are read through Wayland protocols, each where offered: ext-workspace-v1 (niri, sway, KWin, …) for workspaces and `host.focus_workspace`, wlr-foreign-toplevel-management (sway, Hyprland, labwc, …) for windows, `host.focus_window` and `host.close_window`. These windows have no workspace (`Toplevel.workspace` is 0, `Workspace.windows` 0), and `host.compositor` is reported as unsupported. Without any of them, these states keep their defaults.
+
+System states each start their D-Bus service on first use, on its own thread and connection, and change only on the service's signals (the position of a playing track aside). The notification server owns `org.freedesktop.Notifications`; while another server owns it, Palettes waits in the bus's queue and takes over when it leaves. The tray owns `org.kde.StatusNotifierWatcher`, or registers as a host with the watcher already running. Icons in these records are files, looked up from the names services report; tray and notification pixels are written as PNG under `$XDG_RUNTIME_DIR/palettes`. A missing service (no BlueZ, say) leaves its states at their defaults. Records are built positionally, one value per field. See [`examples/status.aegle`](../examples/status.aegle), [`traymenu.aegle`](../examples/traymenu.aegle) and [`notifications.aegle`](../examples/notifications.aegle).
+
+```text
+use "palettes.aegle"
+Panel {
+    state battery: Battery = Battery(false, 0.0, "", false, 0, "", false)
+    state tray: list<TrayItem> = []
+    Row {
+        Text { text: str(int(battery.percent * 100.0)) + "%" }
+        for item in tray key item.id {
+            Icon { name: item.icon; size: 18dp }
+            Button { text: item.title; on clicked { host.tray_activate(item.id) } }
+        }
+    }
+}
+```
 
 ## Records
 
@@ -172,9 +204,21 @@ Workspaces and windows come from Pastel's IPC. Other compositors are read throug
 record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
 record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool }
 record App { id: string; name: string; icon: string }
+record Battery { present: bool; percent: float; state: string; charging: bool; time: int; icon: string; on_battery: bool }
+record Player { name: string; identity: string; icon: string; status: string; playing: bool; title: string; artist: string; album: string; art: string; length: float; can_next: bool; can_previous: bool; can_play: bool; can_seek: bool }
+record Notification { id: int; app: string; icon: string; summary: string; body: string; urgency: int; popup: bool; actions: int }
+record NotificationAction { id: int; key: string; label: string }
+record TrayItem { id: string; title: string; icon: string; status: string; tooltip: string; menu: bool }
+record MenuEntry { id: int; label: string; icon: string; enabled: bool; toggle: string; checked: bool; separator: bool; depth: int; submenu: bool }
+record Network { kind: string; name: string; connected: bool; strength: int; wifi: bool; wifi_available: bool }
+record WifiNetwork { ssid: string; strength: int; secure: bool; active: bool; saved: bool }
+record Bluetooth { available: bool; powered: bool; scanning: bool }
+record BluetoothDevice { address: string; name: string; icon: string; paired: bool; connected: bool; battery: int }
 ```
 
 `Workspace.active`: shown on its output. `focused`: shown on the focused output.
+
+`Battery.percent`: `1.0` = 100 %. `state`: `charging`, `discharging`, `full`, `empty`, `pending` or empty. `time`: seconds until empty or full, 0 when unknown. `Player.name`: the bus name after `org.mpris.MediaPlayer2.`; `status`: `Playing`, `Paused` or `Stopped`; `art`: the cover as a local file; `length` in seconds. `Notification.urgency`: 0 low, 1 normal, 2 critical; `icon`: its image, else the app's icon; `actions`: how many buttons it has in `notification_actions`. `TrayItem.status`: `Active`, `Passive` (may be hidden) or `NeedsAttention`. `MenuEntry.toggle`: `checkmark`, `radio` or empty. `Network.kind`: `wifi`, `ethernet`, `vpn`, `other` or empty; `connected`: full connectivity; `strength` 0–100. `BluetoothDevice.battery`: 0–100, or -1 when it reports none.
 
 ## Host actions
 
@@ -188,6 +232,20 @@ record App { id: string; name: string; icon: string }
 | `host.compositor(string)` | A compositor action, such as Pastel's `"focus-workspace-down"` |
 | `host.set_volume(float)`, `host.set_mic_volume(float)` | `0.0`–`1.5` |
 | `host.toggle_mute()`, `host.toggle_mic_mute()` | |
+| `host.set_power_profile(string)` | One of `power_profiles` |
+| `host.media_play_pause()`, `host.media_next()`, `host.media_previous()` | Ask `media` |
+| `host.media_seek(float)` | Go to a position in seconds |
+| `host.dismiss_notification(int)`, `host.dismiss_notifications()` | Dismiss one or all |
+| `host.notification_action(int, string)` | Invoke a notification's action by key (`default`: a click on it); dismisses it unless resident |
+| `host.tray_activate(string)`, `host.tray_secondary(string)` | Click or middle-click an item (`TrayItem.id`); an item that is only a menu opens it |
+| `host.tray_scroll(string, int)` | Scroll over an item |
+| `host.tray_menu(string)` | Read an item's menu into `tray_menu`; then `host.open` a popup showing it |
+| `host.tray_select(int)` | Choose a `tray_menu` entry (`MenuEntry.id`), which closes the menu |
+| `host.toggle_wifi()`, `host.wifi_scan()`, `host.wifi_disconnect()` | |
+| `host.wifi_connect(string, string)` | SSID and password: an empty password uses a saved connection, or joins an open network |
+| `host.toggle_bluetooth()`, `host.bluetooth_scan(bool)` | Power the adapter; look for devices |
+| `host.bluetooth_connect(string)`, `host.bluetooth_disconnect(string)` | By `BluetoothDevice.address` |
+| `host.bluetooth_pair(string)`, `host.bluetooth_forget(string)` | Pair and trust (devices that need a code typed are refused); remove |
 | `host.toggle(string)` | Open another document, or close it if open |
 | `host.open(string)`, `host.close(string)` | Open a document unless open; close it if open |
 | `host.reload()` | Reload every document |

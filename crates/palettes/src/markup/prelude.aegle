@@ -20,6 +20,21 @@
 //   state mic_muted: bool
 //   state audio_device: string         default output's description
 //   state applications: list<App>      launchable applications, by name
+//   state battery: Battery              UPower's battery; percent 1.0 = 100 %
+//   state power_profile: string         "power-saver", "balanced" or "performance"
+//   state power_profiles: list<string>  the profiles to choose from
+//   state media: Player                 the player that last started playing (MPRIS)
+//   state players: list<Player>         every player
+//   state media_position: float         its position in seconds, each second while playing
+//   state notifications: list<Notification>        newest first; Palettes is the server
+//   state notification_popups: list<Notification>  those shown as popups: new, 5 s unless critical
+//   state notification_actions: list<NotificationAction>  their buttons, by notification id
+//   state tray: list<TrayItem>          status notifier items
+//   state tray_menu: list<MenuEntry>    the menu host.tray_menu opened, submenus flattened
+//   state network: Network              NetworkManager's primary connection and Wi-Fi
+//   state wifi_networks: list<WifiNetwork>  in range, the active one first, then by strength
+//   state bluetooth: Bluetooth          BlueZ's first adapter
+//   state bluetooth_devices: list<BluetoothDevice>  named or paired; connected first
 //
 // Host actions, for `on` blocks:
 //
@@ -33,6 +48,19 @@
 //   host.toggle_mute()
 //   host.set_mic_volume(float)
 //   host.toggle_mic_mute()
+//   host.set_power_profile(string)
+//   host.media_play_pause()  host.media_next()  host.media_previous()
+//   host.media_seek(float)         seconds
+//   host.dismiss_notification(int)  host.dismiss_notifications()
+//   host.notification_action(int, string)   id and key; "default" is a click on it
+//   host.tray_activate(string)  host.tray_secondary(string)  host.tray_scroll(string, int)
+//   host.tray_menu(string)         read an item's menu into tray_menu
+//   host.tray_select(int)          choose a tray_menu entry
+//   host.toggle_wifi()  host.wifi_scan()  host.wifi_disconnect()
+//   host.wifi_connect(string, string)    ssid and password ("" for a saved or open network)
+//   host.toggle_bluetooth()  host.bluetooth_scan(bool)
+//   host.bluetooth_connect(string)  host.bluetooth_disconnect(string)   by address
+//   host.bluetooth_pair(string)  host.bluetooth_forget(string)
 //   host.toggle(string)            open or close another panel document
 //   host.open(string)              open a document unless it is open
 //   host.close(string)             close a document if it is open
@@ -46,3 +74,13 @@
 record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
 record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool }
 record App { id: string; name: string; icon: string }
+record Battery { present: bool; percent: float; state: string; charging: bool; time: int; icon: string; on_battery: bool }
+record Player { name: string; identity: string; icon: string; status: string; playing: bool; title: string; artist: string; album: string; art: string; length: float; can_next: bool; can_previous: bool; can_play: bool; can_seek: bool }
+record Notification { id: int; app: string; icon: string; summary: string; body: string; urgency: int; popup: bool; actions: int }
+record NotificationAction { id: int; key: string; label: string }
+record TrayItem { id: string; title: string; icon: string; status: string; tooltip: string; menu: bool }
+record MenuEntry { id: int; label: string; icon: string; enabled: bool; toggle: string; checked: bool; separator: bool; depth: int; submenu: bool }
+record Network { kind: string; name: string; connected: bool; strength: int; wifi: bool; wifi_available: bool }
+record WifiNetwork { ssid: string; strength: int; secure: bool; active: bool; saved: bool }
+record Bluetooth { available: bool; powered: bool; scanning: bool }
+record BluetoothDevice { address: string; name: string; icon: string; paired: bool; connected: bool; battery: int }

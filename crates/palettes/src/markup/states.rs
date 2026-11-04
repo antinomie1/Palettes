@@ -14,15 +14,15 @@ use std::{cell::RefCell, rc::Rc};
 /// `use "palettes.aegle"`.
 pub const PRELUDE: &str = include_str!("prelude.aegle");
 
-fn string(text: &str) -> Data {
+pub(super) fn string(text: &str) -> Data {
     Data::String(text.into())
 }
 
-fn list(items: impl Iterator<Item = Data>) -> Data {
+pub(super) fn list(items: impl Iterator<Item = Data>) -> Data {
     Data::List(items.collect())
 }
 
-fn record(fields: impl IntoIterator<Item = Data>) -> Data {
+pub(super) fn record(fields: impl IntoIterator<Item = Data>) -> Data {
     Data::Record(fields.into_iter().collect())
 }
 
@@ -60,7 +60,7 @@ fn window(w: &palettes_workspace::Window) -> Data {
 }
 
 /// Sets `name` if the view declares it; a type mismatch is reported once.
-fn set(view: &View, name: &str, value: Data) {
+pub(super) fn set(view: &View, name: &str, value: Data) {
     if view.get(name).is_none() {
         return;
     }
@@ -69,7 +69,7 @@ fn set(view: &View, name: &str, value: Data) {
     }
 }
 
-fn declares(view: &View, names: &[&str]) -> bool {
+pub(super) fn declares(view: &View, names: &[&str]) -> bool {
     names.iter().any(|name| view.get(name).is_some())
 }
 
@@ -179,11 +179,11 @@ pub fn bind(shell: &Shell, shared: &Rc<RefCell<View>>, owner: &Node, output: &st
         });
         set(view, "applications", list(items));
     }
-    Ok(())
+    super::system::bind(shell, shared, owner)
 }
 
 /// A missing service leaves its states at their defaults; the panel still opens.
-fn report(followed: Result<()>, service: &str) {
+pub(super) fn report(followed: Result<()>, service: &str) {
     if let Err(e) = followed {
         eprintln!("palettes: {service}: {e}");
     }

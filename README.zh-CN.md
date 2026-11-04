@@ -11,6 +11,8 @@ Rust 编写的 Wayland 桌面 shell 与桌面小控件库：状态栏、程序�
 - **命令行**：`palettes msg toggle launcher.aegle` 或任意动作，供混成器快捷键调用
 - **资产自动化**：按名字或 app id 查主题图标（含 SVG）、自动注册 `fonts/` 中的字体、路径相对文档解析
 - **服务**：时钟、工作区与窗口（Pastel IPC；其他混成器上经 ext-workspace-v1 与 wlr-foreign-toplevel-management 获取）、PipeWire 音量与静音、已安装应用
+- **D-Bus 系统服务**：电池与电源模式（UPower）、媒体播放（MPRIS）、通知服务器、带菜单的系统托盘（StatusNotifierItem、DBusMenu）、Wi-Fi（NetworkManager）、蓝牙（BlueZ）：`state battery`、`state tray`、`host.wifi_connect(...)`
+- **脚本中的 D-Bus**：`dbus.system(name, path)` 调用方法、跟随属性与信号，不阻塞 shell
 - **毛玻璃与圆角**：圆角、半透明面板，并让混成器模糊其后的桌面（`radius`、`background: #1e1e2ea0`、`opacity`、`blur: true`），需混成器支持 ext-background-effect-v1，如 KWin 与 Pastel
 - **空闲即静止**：无变化时不运行任何代码；服务在首次使用时才启动
 - **可组合**：可与任何 aegle 控件库结合，例如 [am3](https://github.com/antinomie1/am3)（`--features am3`）
@@ -96,6 +98,7 @@ cargo run --release -p palettes --example bar
 | `palettes-workspace` | 与混成器无关的工作区与窗口模型；Pastel 后端 |
 | `palettes-audio` | PipeWire 默认输出与输入 |
 | `palettes-assets` | 资产根目录、图标主题、desktop 条目、文件监视 |
+| `palettes-system` | D-Bus 服务：UPower、MPRIS、通知、托盘、NetworkManager、BlueZ |
 | `palettes` | 门面、服务、标记语言集成、Luau 脚本与 `palettes` 命令 |
 
 设计说明见 [docs/architecture.md](docs/architecture.md)，开发约定见 [AGENTS.md](AGENTS.md)，路线图见 [TODO.md](TODO.md)。

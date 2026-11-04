@@ -40,8 +40,7 @@ New scene primitives, on every aegle renderer:
 
 Every effect above is done (2026-11-04); shaders recompile when their file is saved.
 
-Services beyond the ones below: bluetooth, CPU and memory, app launcher entries,
-a palette picked from the wallpaper, blurred image backgrounds.
+Beyond the services below: blurred image backgrounds.
 
 ### Platform
 
@@ -50,8 +49,10 @@ a palette picked from the wallpaper, blurred image backgrounds.
 - [x] Cursor without cursor-shape-v1 (cursor theme loading, KDE/GTK settings)
 - [x] Drag and drop of text and files between surfaces and clients
 - [ ] Primary selection (middle-click paste): needs an aegle platform API first
-- [ ] Services: battery (UPower via aegle-dbus), network, MPRIS, notifications server,
-      system tray (StatusNotifierHost), brightness, keyboard layout
+- [x] D-Bus services: battery and power profiles, MPRIS, notification server, system tray
+      with DBusMenu, NetworkManager Wi-Fi, BlueZ; `dbus` for scripts
+- [ ] Brightness, keyboard layout, CPU and memory, wallpaper palette as built-in states
+- [ ] PipeWire: device lists, default device switching, per-app volume, peak levels
 - [ ] Session lock surface (ext-session-lock-v1)
 - [ ] Wallpaper layer with images
 - [x] `palettes msg <action>` over a socket, so compositor keybindings open launchers

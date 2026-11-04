@@ -17,6 +17,7 @@ pub(crate) mod link;
 mod popup;
 mod shader;
 pub mod states;
+mod system;
 
 use aegle_loader::{Elements, Program, View, markup::Type};
 use aegle_ui::{Node, Result, Theme, Ui};

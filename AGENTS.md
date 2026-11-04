@@ -15,7 +15,7 @@ surfaces. It works with any wlr-layer-shell compositor and integrates deeply wit
 
 ```sh
 cargo build                          # needs libxkbcommon, libpipewire-0.3, clang (bindgen), a Vulkan loader
-cargo test                           # every crate's tests/; live parts skip without WAYLAND_DISPLAY / PipeWire
+cargo test                           # every crate's tests/; live parts skip without WAYLAND_DISPLAY / PipeWire / dbus-daemon
 cargo test -p palettes-shell --test input -- --ignored   # typing, IME, clipboard, drag; headless Pastel only
 cargo test -p palettes --test popup -- --ignored         # clicks a popup open and closed; headless Pastel only
 cargo run -p palettes --example bar  # the Rust bar on every output
@@ -30,7 +30,7 @@ then run against its `WAYLAND_DISPLAY` and capture with `grim`.
 
 Read `docs/architecture.md` before changing the loop, surfaces or services, and keep
 `docs/markup.md` in step with states, records, actions and `Panel` properties, and
-`docs/scripts.md` with the Luau built-ins.
+`docs/scripts.md` with the Luau built-ins (`dbus` included).
 
 ## Layout of the code
 
@@ -44,6 +44,10 @@ crates/
   palettes-audio/      PipeWire default sink/source: volume, mute. Own thread.
   palettes-assets/     Asset roots, freedesktop icon and desktop-entry lookup, fonts
                        directory, inotify watcher for hot reload. Pure.
+  palettes-system/     D-Bus services on aegle-dbus, one thread and connection each:
+                       battery and power profiles, MPRIS, notification server,
+                       tray (watcher/host, DBusMenu), NetworkManager, BlueZ;
+                       a plain `Link` for scripts.
   palettes-wayland/    Wayland client for shell surfaces: layer surfaces, popups,
                        outputs, seat input (compose, text-input-v3, clipboard,
                        drag and drop),
@@ -56,7 +60,8 @@ crates/
                        scripts beside documents, `palettes msg` IPC, the runner binary.
 ```
 
-Service crates (`clock`, `workspace`, `audio`, `assets`) know nothing about aegle or Wayland.
+Service crates (`clock`, `workspace`, `audio`, `assets`, `system`) know nothing about aegle's UI or Wayland
+(`system` uses only the dependency-free `aegle-dbus`).
 They report through plain callbacks; the facade moves values onto the UI thread.
 
 ## Rules

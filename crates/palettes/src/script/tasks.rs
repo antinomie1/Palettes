@@ -23,6 +23,8 @@ pub(crate) enum Event {
     Line(String),
     /// A timer fired.
     Tick,
+    /// A message from a script bus; `callback` is the bus.
+    Bus(palettes_system::Message),
 }
 
 /// A report for the callback `callback` of script `script`.

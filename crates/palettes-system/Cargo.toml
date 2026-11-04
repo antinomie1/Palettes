@@ -1,0 +1,19 @@
+[package]
+name = "palettes-system"
+description = "System services over D-Bus: battery, media players, notifications, tray, network, bluetooth"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+aegle-dbus.workspace = true
+png = { version = "0.18", default-features = false }
+rustix = { version = "1", features = ["event", "std"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+aegle-dbus.workspace = true

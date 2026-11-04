@@ -16,8 +16,10 @@ palettes-audio = { path = "crates/palettes-audio" }
 palettes-assets = { path = "crates/palettes-assets" }
 palettes-wayland = { path = "crates/palettes-wayland" }
 palettes-shell = { path = "crates/palettes-shell" }
+palettes-system = { path = "crates/palettes-system" }
 # One aegle for every control library (am3 uses the same source). See AGENTS.md.
 aegle-platform = { git = "https://github.com/antinomie1/aegle", branch = "main" }
+aegle-dbus = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-types = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-portal = { git = "https://github.com/antinomie1/aegle", branch = "main" }
 aegle-ui = { git = "https://github.com/antinomie1/aegle", branch = "main", features = ["system-fonts", "motion", "grid"] }

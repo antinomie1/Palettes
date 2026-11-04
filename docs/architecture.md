@@ -6,7 +6,7 @@
 palettes            facade: services ↔ UI thread, markup, runner
 ├── palettes-shell  Shell, Surface, Vulkan presentation, channels
 │   └── palettes-wayland   aegle_platform::{Platform, SurfacePlatform}
-├── palettes-clock, palettes-workspace, palettes-audio, palettes-assets
+├── palettes-clock, palettes-workspace, palettes-audio, palettes-assets, palettes-system
 └── aegle: ui, widgets, loader, render-vulkan (git, branch main)
 ```
 
@@ -21,7 +21,7 @@ One UI thread. `Shell::dispatch`:
 3. Routes events to trees; drains channel values on wake; resyncs per-output panels on output changes.
 4. Presents surfaces the compositor asked to draw: each frame is requested with a frame callback, so drawing follows the compositor's pace and stops when nothing changes.
 
-Background threads, each blocked until it has something to say: clock (`timerfd` on the realtime clock, armed for the next second or minute, cancelled by clock changes), compositor IPC reader and command writer, PipeWire loop, inotify watcher. Clipboard pipes are read and written on short-lived threads; a finished read comes back through a channel and the wake `eventfd`, and pasting this client's own selection skips the pipe.
+Background threads, each blocked until it has something to say: clock (`timerfd` on the realtime clock, armed for the next second or minute, cancelled by clock changes), compositor IPC reader and command writer, PipeWire loop, inotify watcher, one per D-Bus service, and a reader per script bus. Clipboard pipes are read and written on short-lived threads; a finished read comes back through a channel and the wake `eventfd`, and pasting this client's own selection skips the pipe.
 
 ## Input
 
@@ -62,3 +62,12 @@ Pastel exposes `$XDG_RUNTIME_DIR/pastel.$WAYLAND_DISPLAY.sock` (`PASTEL_SOCKET` 
 ## Audio
 
 Volume and mute are read from the default node's `Props` and written through its device's active `Route` (saved), like desktop mixers, so all mixers agree. Volumes use the cubic scale mixers display.
+
+## System services
+
+`palettes-system` runs each D-Bus service (battery, media, notifications, tray, network, bluetooth) on its own aegle-dbus connection and thread. The thread `poll`s the bus socket, a socket pair that wakes it for commands from the UI thread, and the service's next deadline (notification expiry, the next whole second of a playing track's position when `media_position` is followed). A blocking call made on that thread queues the signals arriving meanwhile; after each batch of messages the service rebuilds its state and reports it only if it changed, so a burst of `PropertiesChanged` is one update. Commands are sent without waiting for their reply; error replies are logged.
+
+NetworkManager and BlueZ are mirrored through `org.freedesktop.DBus.ObjectManager` (`GetManagedObjects`, then `InterfacesAdded`, `InterfacesRemoved` and `PropertiesChanged`); UPower and MPRIS players through `GetAll` and `PropertiesChanged`; tray items are read again whole on their `New*` signals. The notification server and the tray's watcher answer calls on their connections. Pixels that arrive over the bus become PNG files under `$XDG_RUNTIME_DIR/palettes`, rewritten only when they change, so the watcher reloads what shows them.
+
+The facade keeps one topic per service type (`Services::follow::<S>`), started for the first document declaring one of its states or the first action using it. Script buses (`dbus.session`, `dbus.system`) are plain connections whose reader thread forwards every reply and signal through the script runtime's channel; the UI thread matches replies to pending callbacks by serial and signals to watches by path, interface, member and first argument.
+

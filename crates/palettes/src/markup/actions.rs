@@ -14,7 +14,7 @@ thread_local! {
 }
 
 /// Registers a Palettes action for markup, scripts and `palettes msg`.
-fn action(name: &str, params: &[Type], run: impl Fn(&[Data]) -> Result<()> + 'static) {
+pub(crate) fn action(name: &str, params: &[Type], run: impl Fn(&[Data]) -> Result<()> + 'static) {
     let run: Run = Rc::new(run);
     let markup = run.clone();
     aegle_loader::action(name, params, move |a: &[Data]| markup(a));
@@ -153,6 +153,7 @@ pub(crate) fn register(shell: &Shell) {
         &[],
         mixer(shell, |m, _| m.toggle_mute(audio_target(false))),
     );
+    super::system::actions(Some(shell));
     action("toggle", &[Type::String], |a| super::toggle(text(a)));
     action("reload", &[], |_| super::reload_all());
     let quit = shell.clone();
@@ -183,4 +184,5 @@ pub(crate) fn declare() {
     ] {
         action(name, params, |_| Ok(()));
     }
+    super::system::actions(None);
 }

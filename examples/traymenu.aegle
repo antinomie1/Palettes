@@ -1,0 +1,25 @@
+// A tray item's menu, opened by status.aegle beside the item.
+use "palettes.aegle"
+
+Panel {
+    edge: popup
+    size: 240dp
+    span: 220dp
+    radius: 10dp
+    background: #313244f2
+    padding: 6dp
+
+    state tray_menu: list<MenuEntry> = []
+
+    for entry in tray_menu key entry.id {
+        if entry.separator {
+            Text { text: "" }
+        } else if entry.submenu {
+            Text { text: entry.label; foreground: #a6adc8 }
+        } else if entry.checked {
+            Button { text: "✓ " + entry.label; on clicked { host.tray_select(entry.id); host.close("traymenu.aegle") } }
+        } else {
+            Button { text: entry.label; on clicked { host.tray_select(entry.id); host.close("traymenu.aegle") } }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+// A bottom bar of system states: media, network, bluetooth, battery and the
+// tray; a tray item's menu opens in traymenu.aegle, and notification popups
+// show in notifications.aegle. Run all three:
+// `cargo run -p palettes -- examples/status.aegle examples/notifications.aegle`.
+use "palettes.aegle"
+
+Panel {
+    edge: bottom
+    size: 34dp
+    padding: [0dp, 8dp]
+
+    state media: Player = Player("", "", "", "", false, "", "", "", "", 0.0, false, false, false, false)
+    state network: Network = Network("", "", false, 0, false, false)
+    state bluetooth: Bluetooth = Bluetooth(false, false, false)
+    state battery: Battery = Battery(false, 0.0, "", false, 0, "", false)
+    state tray: list<TrayItem> = []
+
+    Row {
+        grow: 1
+        gap: 8dp
+        align: center
+        Button {
+            text: media.title + " · " + media.artist
+            visible: media.title != ""
+            on clicked { host.media_play_pause() }
+        }
+        Text { text: ""; grow: 1 }
+        Button {
+            text: network.name + " " + str(network.strength) + "%"
+            visible: network.kind == "wifi"
+            on clicked { host.toggle_wifi() }
+        }
+        Button {
+            text: "BT"
+            visible: bluetooth.available
+            on clicked { host.toggle_bluetooth() }
+        }
+        Icon { name: battery.icon; size: 18dp; visible: battery.present }
+        Text { text: str(int(battery.percent * 100.0)) + "%"; visible: battery.present }
+        for item in tray key item.id {
+            Icon { name: item.icon; size: 18dp }
+            Button { text: item.title; on clicked { host.tray_activate(item.id) } }
+            Button {
+                text: "▾"
+                visible: item.menu
+                on clicked { host.tray_menu(item.id); host.open("traymenu.aegle") }
+            }
+        }
+    }
+}

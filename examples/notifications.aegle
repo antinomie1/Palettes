@@ -1,0 +1,38 @@
+// Notification popups in the top right corner, for five seconds each unless
+// critical; clicking one invokes its default action.
+use "palettes.aegle"
+
+Panel {
+    edge: top
+    span: 360dp
+    size: 300dp
+    layer: overlay
+    exclusive: false
+    gap: 8dp
+    padding: 8dp
+
+    state notification_popups: list<Notification> = []
+    state notification_actions: list<NotificationAction> = []
+
+    for n in notification_popups key n.id {
+        Column {
+            radius: 12dp
+            background: #313244f2
+            padding: 10dp
+            gap: 4dp
+            Row {
+                gap: 8dp
+                Icon { name: n.icon; size: 24dp }
+                Text { text: n.summary; grow: 1 }
+                Button { text: "×"; on clicked { host.dismiss_notification(n.id) } }
+            }
+            Text { text: n.body; wrap: true }
+            Row {
+                gap: 6dp
+                for a in notification_actions key str(a.id) + a.key {
+                    Button { text: a.label; visible: a.id == n.id; on clicked { host.notification_action(a.id, a.key) } }
+                }
+            }
+        }
+    }
+}

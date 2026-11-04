@@ -21,6 +21,7 @@ palettes-clock.workspace = true
 palettes-workspace.workspace = true
 palettes-audio.workspace = true
 palettes-assets.workspace = true
+palettes-system.workspace = true
 aegle-ui.workspace = true
 aegle-widgets.workspace = true
 aegle-loader.workspace = true

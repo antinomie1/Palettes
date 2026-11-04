@@ -1,5 +1,5 @@
 //! Shell services on the UI thread: clock, desktop (workspaces and windows),
-//! audio, icons and applications. Each starts on first use, and every
+//! audio, the D-Bus system services, icons and applications. Each starts on first use, and every
 //! subscription is owned by a control: once that control is gone (its panel
 //! closed with its output, say) the subscription ends with it.
 
@@ -8,8 +8,15 @@ use palettes_assets::{Applications, Icons};
 use palettes_audio::{Audio, AudioState, Target};
 use palettes_clock::{Period, Ticker};
 use palettes_shell::Shell;
+use palettes_system::System;
 use palettes_workspace::{Compositor, Desktop};
-use std::{cell::RefCell, rc::Rc, time::SystemTime};
+use std::{
+    any::{Any, TypeId},
+    cell::RefCell,
+    collections::HashMap,
+    rc::Rc,
+    time::SystemTime,
+};
 
 /// A follower and the control that owns it.
 type Follower<T> = (Node, Box<dyn FnMut(&T)>);
@@ -121,6 +128,8 @@ struct Hub {
     clock: Rc<RefCell<Clock>>,
     desktop: Option<(Rc<Compositor>, Shared<Desktop>)>,
     audio: Option<(Rc<Audio>, Shared<AudioState>)>,
+    /// `(Rc<S>, Shared<S::State>)` by the system service type `S`.
+    system: HashMap<TypeId, Rc<dyn Any>>,
     icons: Option<Rc<Icons>>,
     applications: Option<Rc<Applications>>,
 }
@@ -167,6 +176,15 @@ pub trait Services {
     fn audio<H>(&self, owner: &H, f: impl FnMut(&H, &AudioState) + 'static) -> Result<()>
     where
         H: std::ops::Deref<Target = Node> + Clone + 'static;
+
+    /// Follows a system service, such as `palettes_system::Battery`:
+    /// `shell.follow::<Battery, _>(&label, |label, battery| ...)`.
+    fn follow<S: System, H>(&self, owner: &H, f: impl FnMut(&H, &S::State) + 'static) -> Result<()>
+    where
+        H: std::ops::Deref<Target = Node> + Clone + 'static;
+
+    /// A system service, to act on it: `shell.system::<Media>()?`.
+    fn system<S: System>(&self) -> Result<Rc<S>>;
 
     /// The compositor, to switch workspaces and focus or close windows.
     fn compositor(&self) -> Result<Rc<Compositor>>;
@@ -216,6 +234,38 @@ fn audio_topic(shell: &Shell) -> Result<(Rc<Audio>, Shared<AudioState>)> {
     Ok(found)
 }
 
+type SystemTopic<S> = (Rc<S>, Shared<<S as System>::State>);
+
+/// A system service and its topic, started on first use.
+fn system_topic<S: System>(shell: &Shell) -> Result<SystemTopic<S>> {
+    let id = TypeId::of::<S>();
+    let found = HUB.with_borrow(|hub| hub.system.get(&id).cloned());
+    if let Some(found) = found.and_then(|f| f.downcast::<SystemTopic<S>>().ok()) {
+        return Ok((*found).clone());
+    }
+    let topic: Shared<S::State> = Rc::default();
+    let target = topic.clone();
+    let sender = shell.channel(move |_, state: S::State| publish(&target, state));
+    let service = Rc::new(S::spawn(
+        &S::BUS,
+        Box::new(move |s| sender.send(s.clone())),
+    )?);
+    let found = (service, topic);
+    HUB.with_borrow_mut(|hub| hub.system.insert(id, Rc::new(found.clone())));
+    Ok(found)
+}
+
+/// Follows a system service for `owner`; see [`Services::follow`].
+pub(crate) fn follow_system<S: System>(
+    shell: &Shell,
+    owner: &Node,
+    f: impl FnMut(&S::State) + 'static,
+) -> Result<()> {
+    let (_, topic) = system_topic::<S>(shell)?;
+    follow(&topic, owner.clone(), Box::new(f));
+    Ok(())
+}
+
 impl Services for Shell {
     fn clock<H>(&self, owner: &H, format: &str, mut f: impl FnMut(&H, &str) + 'static) -> Result<()>
     where
@@ -239,6 +289,22 @@ impl Services for Shell {
     {
         let handle = owner.clone();
         follow_audio(self, owner, move |a| f(&handle, a))
+    }
+
+    fn follow<S: System, H>(
+        &self,
+        owner: &H,
+        mut f: impl FnMut(&H, &S::State) + 'static,
+    ) -> Result<()>
+    where
+        H: std::ops::Deref<Target = Node> + Clone + 'static,
+    {
+        let handle = owner.clone();
+        follow_system::<S>(self, owner, move |s| f(&handle, s))
+    }
+
+    fn system<S: System>(&self) -> Result<Rc<S>> {
+        Ok(system_topic::<S>(self)?.0)
     }
 
     fn compositor(&self) -> Result<Rc<Compositor>> {

@@ -1,5 +1,5 @@
 //! The globals a script sees: `state`, `host`, `watch`, `exec`, `lines`,
-//! `read`, `file`, `json`, `after`, `every` and `print`.
+//! `read`, `file`, `json`, `dbus`, `after`, `every` and `print`.
 
 use super::{Callback, Message, Task, convert, tasks, with};
 use mlua::{Function, Lua, LuaSerdeExt, MultiValue, Table, Value};
@@ -119,6 +119,7 @@ pub(super) fn environment(lua: &Lua, id: u64, path: &Path) -> mlua::Result<Table
         })?,
     )?;
     base.set("json", json(lua)?)?;
+    base.set("dbus", super::dbus::table(lua, id)?)?;
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())

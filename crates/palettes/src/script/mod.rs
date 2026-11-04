@@ -5,6 +5,7 @@
 
 mod api;
 pub(crate) mod convert;
+mod dbus;
 mod tasks;
 
 use aegle_loader::{Data, markup::Type};
@@ -142,7 +143,11 @@ pub(crate) fn unload(path: &Path) {
     let removed = with(|r| {
         let index = r.scripts.iter().position(|s| s.path == path)?;
         Some(r.scripts.remove(index))
-    });
+    })
+    .flatten();
+    if let Some(script) = &removed {
+        dbus::unload(script.id);
+    }
     // Dropped outside the borrow: tasks stop as they drop.
     drop(removed);
 }
@@ -168,6 +173,9 @@ fn script_path(id: u64) -> PathBuf {
 }
 
 fn dispatch(message: Message) {
+    if let Event::Bus(bus) = message.event {
+        return dbus::received(message.callback as usize, bus);
+    }
     let Some(Some((function, lines))) = with(|r| {
         let script = r.scripts.iter_mut().find(|s| s.id == message.script)?;
         let callback = script.callbacks.get(&message.callback)?;
@@ -175,6 +183,7 @@ fn dispatch(message: Message) {
             Event::Output(..) => true,
             Event::Line(_) => false,
             Event::Tick => !callback.task.running(),
+            Event::Bus(_) => true,
         };
         let found = (callback.function.clone(), callback.lines);
         if done {
@@ -188,7 +197,7 @@ fn dispatch(message: Message) {
         Event::Output(_, _) if lines => Ok(()),
         Event::Output(text, status) => function.call::<()>((text, status)),
         Event::Line(line) => function.call::<()>(line),
-        Event::Tick => function.call::<()>(()),
+        Event::Tick | Event::Bus(_) => function.call::<()>(()),
     };
     if let Err(e) = result {
         report(&script_path(message.script), &e);
