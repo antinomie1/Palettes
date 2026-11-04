@@ -36,7 +36,7 @@ wayland-protocols-misc = { version = "0.3.12", features = ["client"] }
 wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
 xkbcommon = { version = "0.8.0", default-features = false }
 # Pastel's protocol crate, pinned; bump `rev` with Pastel. To change both, see AGENTS.md.
-pastel-ipc = { git = "https://github.com/antinomie1/Pastel", rev = "fc882f2ce322261ecdf39d774d5fa694f29d9ffa" }
+pastel-ipc = { git = "https://github.com/antinomie1/Pastel", rev = "cd1c5f1ecd36056334f0bdc094f99b1b8bb118e7" }
 
 [workspace.lints.rust]
 missing_docs = "warn"

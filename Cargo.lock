@@ -11,7 +11,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 [[package]]
 name = "aegle-controls"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-text",
  "aegle-types",
@@ -20,17 +20,17 @@ dependencies = [
 [[package]]
 name = "aegle-core"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 
 [[package]]
 name = "aegle-dbus"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 
 [[package]]
 name = "aegle-glyph"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-image",
  "aegle-scene",
@@ -49,7 +49,7 @@ dependencies = [
 [[package]]
 name = "aegle-gpu"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-scene",
  "aegle-types",
@@ -61,7 +61,7 @@ dependencies = [
 [[package]]
 name = "aegle-image"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-scene",
  "aegle-types",
@@ -72,7 +72,7 @@ dependencies = [
 [[package]]
 name = "aegle-layout"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-core",
  "aegle-types",
@@ -82,7 +82,7 @@ dependencies = [
 [[package]]
 name = "aegle-loader"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-macros",
  "aegle-markup",
@@ -94,7 +94,7 @@ dependencies = [
 [[package]]
 name = "aegle-macros"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-markup",
  "proc-macro2",
@@ -105,12 +105,12 @@ dependencies = [
 [[package]]
 name = "aegle-markup"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 
 [[package]]
 name = "aegle-motion"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-types",
 ]
@@ -118,7 +118,7 @@ dependencies = [
 [[package]]
 name = "aegle-platform"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-types",
 ]
@@ -126,7 +126,7 @@ dependencies = [
 [[package]]
 name = "aegle-portal"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-dbus",
  "aegle-types",
@@ -135,7 +135,7 @@ dependencies = [
 [[package]]
 name = "aegle-render-vulkan"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-glyph",
  "aegle-gpu",
@@ -152,7 +152,7 @@ dependencies = [
 [[package]]
 name = "aegle-scene"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-types",
  "linebender_resource_handle",
@@ -162,7 +162,7 @@ dependencies = [
 [[package]]
 name = "aegle-segment"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "libloading",
  "objc2-core-foundation",
@@ -171,7 +171,7 @@ dependencies = [
 [[package]]
 name = "aegle-text"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-glyph",
  "aegle-scene",
@@ -193,7 +193,7 @@ dependencies = [
 [[package]]
 name = "aegle-theme"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-types",
 ]
@@ -201,12 +201,12 @@ dependencies = [
 [[package]]
 name = "aegle-types"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 
 [[package]]
 name = "aegle-ui"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-controls",
  "aegle-core",
@@ -221,7 +221,7 @@ dependencies = [
 [[package]]
 name = "aegle-widgets"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/aegle?branch=main#886e9ae7d8652e69b467ff71ea0732d82d72ccd5"
+source = "git+https://github.com/antinomie1/aegle?branch=main#046e223b4e9d4e1e3b98354df35822e5fbe65b20"
 dependencies = [
  "aegle-controls",
  "aegle-core",
@@ -1281,7 +1281,7 @@ dependencies = [
 [[package]]
 name = "pastel-ipc"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/Pastel?rev=fc882f2ce322261ecdf39d774d5fa694f29d9ffa#fc882f2ce322261ecdf39d774d5fa694f29d9ffa"
+source = "git+https://github.com/antinomie1/Pastel?rev=cd1c5f1ecd36056334f0bdc094f99b1b8bb118e7#cd1c5f1ecd36056334f0bdc094f99b1b8bb118e7"
 dependencies = [
  "serde",
  "serde_json",
