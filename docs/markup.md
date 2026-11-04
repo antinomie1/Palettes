@@ -176,6 +176,7 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | `windows` | `list<Toplevel>` | Every window, by workspace |
 | `focused_title`, `focused_app` | `string` | The focused window's title and app id |
 | `focused_icon` | `string` | Its icon file |
+| `keyboard_layout` | `string` | The active keyboard layout's name, such as `English (US)`; Pastel only |
 | `volume`, `mic_volume` | `float` | Default output / input volume, `1.0` = 100 % |
 | `muted`, `mic_muted` | `bool` | |
 | `audio_device` | `string` | Default output's description |

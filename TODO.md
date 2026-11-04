@@ -51,7 +51,7 @@ Beyond the services below: blurred image backgrounds (done: `Image { blur }`).
 - [ ] Primary selection (middle-click paste): needs an aegle platform API first
 - [x] D-Bus services: battery and power profiles, MPRIS, notification server, system tray
       with DBusMenu, NetworkManager Wi-Fi, BlueZ; `dbus` for scripts
-- [ ] Brightness, keyboard layout, CPU and memory, wallpaper palette as built-in states
+- [x] Brightness, keyboard layout, CPU and memory, wallpaper palette as built-in states
 - [ ] PipeWire: device lists, default device switching, per-app volume, peak levels
 - [ ] Session lock surface (ext-session-lock-v1)
 - [x] Wallpaper layer with images, and its palette as tokens and a state

@@ -87,6 +87,7 @@ const DESKTOP: &[&str] = &[
     "focused_title",
     "focused_app",
     "focused_icon",
+    "keyboard_layout",
 ];
 const AUDIO: &[&str] = &["volume", "muted", "mic_volume", "mic_muted", "audio_device"];
 
@@ -111,6 +112,7 @@ fn desktop(view: &View, output: &str, desktop: &Desktop) {
     if view.get("focused_icon").is_some() {
         set(view, "focused_icon", string(&field(icon_of)));
     }
+    set(view, "keyboard_layout", string(&desktop.keyboard_layout));
 }
 
 fn audio(view: &View, audio: &AudioState) {

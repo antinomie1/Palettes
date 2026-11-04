@@ -14,6 +14,7 @@
 //   state focused_title: string        the focused window's title
 //   state focused_app: string          its app id
 //   state focused_icon: string         its icon file
+//   state keyboard_layout: string      the active layout's name, such as "English (US)" (Pastel)
 //   state volume: float                default output volume, 1.0 = 100 %
 //   state muted: bool
 //   state mic_volume: float            default input volume

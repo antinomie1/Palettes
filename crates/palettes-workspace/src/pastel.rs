@@ -53,6 +53,7 @@ pub fn desktop(state: pastel_ipc::State) -> Desktop {
                 fullscreen: w.fullscreen,
             })
             .collect(),
+        keyboard_layout: state.keyboard_layout,
     }
 }
 

@@ -42,6 +42,7 @@ fn state() -> pastel_ipc::State {
             floating: false,
             fullscreen: false,
         }],
+        keyboard_layout: "English (US)".into(),
     }
 }
 
@@ -87,6 +88,7 @@ fn follows_and_drives_pastel() {
     assert_eq!(desktop.focused_window().unwrap().icon, "utilities-terminal");
     assert_eq!(desktop.focused_workspace().unwrap().name, "1");
     assert_eq!(desktop.workspaces_on("DP-1").count(), 2);
+    assert_eq!(desktop.keyboard_layout, "English (US)");
     // Hanging up ends with an empty desktop.
     assert_eq!(
         seen.recv_timeout(Duration::from_secs(2)).unwrap(),

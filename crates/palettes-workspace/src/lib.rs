@@ -24,6 +24,9 @@ pub struct Desktop {
     pub workspaces: Vec<Workspace>,
     /// Mapped windows, grouped by workspace.
     pub windows: Vec<Window>,
+    /// The active keyboard layout's name, such as `English (US)`; empty
+    /// where the compositor does not say (only Pastel does).
+    pub keyboard_layout: String,
 }
 
 /// A monitor.
