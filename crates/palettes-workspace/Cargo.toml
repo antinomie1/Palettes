@@ -1,6 +1,6 @@
 [package]
 name = "palettes-workspace"
-description = "Compositor-neutral workspaces and windows, with a Pastel IPC backend"
+description = "Compositor-neutral workspaces and windows, from Pastel IPC or Wayland protocols"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,6 +11,7 @@ repository.workspace = true
 pastel-ipc.workspace = true
 wayland-client.workspace = true
 wayland-protocols.workspace = true
+wayland-protocols-wlr.workspace = true
 
 [lints]
 workspace = true

@@ -145,7 +145,7 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | `audio_device` | `string` | Default output's description |
 | `applications` | `list<App>` | Launchable applications, sorted by name |
 
-Workspaces and windows come from Pastel's IPC. On other compositors with ext-workspace-v1 (niri, sway, …) workspaces still come, and `host.focus_workspace` still works; windows stay empty and the other compositor actions are reported as unsupported. Without either, these states keep their defaults.
+Workspaces and windows come from Pastel's IPC. Other compositors are read through Wayland protocols, each where offered: ext-workspace-v1 (niri, sway, KWin, …) for workspaces and `host.focus_workspace`, wlr-foreign-toplevel-management (sway, Hyprland, labwc, …) for windows, `host.focus_window` and `host.close_window`. These windows have no workspace (`Toplevel.workspace` is 0, `Workspace.windows` 0), and `host.compositor` is reported as unsupported. Without any of them, these states keep their defaults.
 
 ## Records
 

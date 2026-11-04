@@ -1,14 +1,17 @@
 //! Workspaces and windows as a shell shows them, independent of the compositor.
 //!
 //! [`Compositor::connect`] picks the richest source the session has: Pastel's
-//! IPC (workspaces, windows, focus, any action), else the ext-workspace-v1
-//! protocol any compositor may offer (workspaces and switching; no windows).
+//! IPC (workspaces, windows, focus, any action), else the Wayland protocols
+//! other compositors offer: ext-workspace-v1 for workspaces and switching,
+//! wlr-foreign-toplevel-management for windows, focusing and closing them.
 //! [`Compositor::subscribe`] delivers the whole [`Desktop`] on a background
 //! thread at once and after every change; requests such as
 //! [`Compositor::focus_workspace`] never block the caller.
 
-mod ext;
 mod pastel;
+mod toplevels;
+mod wayland;
+mod workspaces;
 
 use std::{io, sync::mpsc};
 
@@ -63,7 +66,8 @@ pub struct Window {
     /// The icon name the window set itself, empty without one; for windows
     /// whose app id names no desktop entry.
     pub icon: String,
-    /// The workspace it is on.
+    /// The workspace it is on; 0 where the source doesn't say (Wayland
+    /// protocols).
     pub workspace: u64,
     /// It has the keyboard.
     pub focused: bool,
@@ -106,7 +110,7 @@ pub enum Command {
 /// Where workspaces and windows come from.
 enum Backend {
     Pastel(mpsc::Sender<Command>),
-    Ext(ext::Ext),
+    Wayland(Box<wayland::Wayland>),
 }
 
 /// The running compositor.
@@ -119,22 +123,25 @@ pub struct Compositor {
 pub enum Source {
     /// Pastel's IPC: workspaces, windows and every request.
     Pastel,
-    /// ext-workspace-v1: workspaces and [`Command::FocusWorkspace`] only.
-    ExtWorkspace,
+    /// Wayland protocols, each where the compositor has it: ext-workspace-v1
+    /// (workspaces, [`Command::FocusWorkspace`]) and
+    /// wlr-foreign-toplevel-management (windows without workspaces,
+    /// [`Command::FocusWindow`], [`Command::CloseWindow`]). No actions.
+    Wayland,
 }
 
 impl Compositor {
     /// Connects to the compositor of this session: Pastel's IPC if it is
-    /// there, else ext-workspace-v1. Fails when there is neither.
+    /// there, else its Wayland protocols. Fails when there is neither.
     pub fn connect() -> io::Result<Self> {
         let backend = match pastel::commands() {
             Ok(commands) => Backend::Pastel(commands),
-            Err(pastel) => match ext::Ext::connect() {
-                Ok(ext) => Backend::Ext(ext),
-                Err(ext) => {
+            Err(pastel) => match wayland::Wayland::connect() {
+                Ok(wayland) => Backend::Wayland(Box::new(wayland)),
+                Err(wayland) => {
                     return Err(io::Error::new(
                         io::ErrorKind::NotFound,
-                        format!("{pastel}; {ext}"),
+                        format!("{pastel}; {wayland}"),
                     ));
                 }
             },
@@ -142,10 +149,10 @@ impl Compositor {
         Ok(Self { backend })
     }
 
-    /// Connects through ext-workspace-v1 even where Pastel's IPC exists.
-    pub fn connect_ext_workspace() -> io::Result<Self> {
+    /// Connects through the Wayland protocols even where Pastel's IPC exists.
+    pub fn connect_wayland() -> io::Result<Self> {
         Ok(Self {
-            backend: Backend::Ext(ext::Ext::connect()?),
+            backend: Backend::Wayland(Box::new(wayland::Wayland::connect()?)),
         })
     }
 
@@ -153,18 +160,18 @@ impl Compositor {
     pub fn source(&self) -> Source {
         match self.backend {
             Backend::Pastel(_) => Source::Pastel,
-            Backend::Ext(_) => Source::ExtWorkspace,
+            Backend::Wayland(_) => Source::Wayland,
         }
     }
 
     /// Calls `changed` on a background thread with the desktop now and after
     /// every change. When the compositor goes away it is called once more with
-    /// an empty desktop, and the thread ends. ext-workspace-v1 allows one
+    /// an empty desktop, and the thread ends. The Wayland protocols allow one
     /// subscription per connection.
     pub fn subscribe(&self, changed: impl FnMut(Desktop) + Send + 'static) -> io::Result<()> {
         match &self.backend {
             Backend::Pastel(_) => pastel::subscribe(changed),
-            Backend::Ext(ext) => ext.subscribe(changed),
+            Backend::Wayland(wayland) => wayland.subscribe(changed),
         }
     }
 
@@ -175,11 +182,18 @@ impl Compositor {
             (Backend::Pastel(commands), command) => {
                 let _ = commands.send(command);
             }
-            (Backend::Ext(ext), Command::FocusWorkspace(id)) => ext.focus_workspace(id),
-            (Backend::Ext(_), command) => {
-                eprintln!(
-                    "palettes: {command:?} needs Pastel's IPC; ext-workspace-v1 only switches workspaces"
-                );
+            (Backend::Wayland(wayland), command) => {
+                let done = match &command {
+                    Command::FocusWorkspace(id) => wayland.focus_workspace(*id),
+                    Command::FocusWindow(id) => wayland.window(*id, false),
+                    Command::CloseWindow(id) => wayland.window(*id, true),
+                    Command::Action(_) => false,
+                };
+                if !done {
+                    eprintln!(
+                        "palettes: {command:?}: not possible through this compositor's Wayland protocols"
+                    );
+                }
             }
         }
     }
