@@ -153,6 +153,29 @@ pub(crate) fn register(shell: &Shell) {
         &[],
         mixer(shell, |m, _| m.toggle_mute(audio_target(false))),
     );
+    for (name, sink) in [("set_default_sink", true), ("set_default_source", false)] {
+        let shell = shell.clone();
+        action(name, &[Type::String], move |a| {
+            shell.mixer()?.set_default(audio_target(sink), text(a));
+            Ok(())
+        });
+    }
+    action(
+        "set_stream_volume",
+        &[Type::Int, Type::Float],
+        mixer(shell, |m, a| {
+            let level = match a.get(1) {
+                Some(Data::Float(n)) => *n,
+                _ => 0.0,
+            };
+            m.set_stream_volume(int(a) as u32, level)
+        }),
+    );
+    action(
+        "toggle_stream_mute",
+        &[Type::Int],
+        mixer(shell, |m, a| m.set_stream_muted(int(a) as u32, None)),
+    );
     super::system::actions(Some(shell));
     action("toggle", &[Type::String], |a| super::toggle(text(a)));
     action("reload", &[], |_| super::reload_all());
@@ -178,6 +201,10 @@ pub(crate) fn declare() {
         ("toggle_mute", &[]),
         ("set_mic_volume", &[Type::Float]),
         ("toggle_mic_mute", &[]),
+        ("set_default_sink", &[Type::String]),
+        ("set_default_source", &[Type::String]),
+        ("set_stream_volume", &[Type::Int, Type::Float]),
+        ("toggle_stream_mute", &[Type::Int]),
         ("toggle", &[Type::String]),
         ("reload", &[]),
         ("quit", &[]),

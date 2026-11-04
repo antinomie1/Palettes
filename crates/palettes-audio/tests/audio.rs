@@ -51,3 +51,34 @@ fn follows_the_default_source_and_toggles_its_mute() {
     audio.set_muted(Target::Source, source.muted);
     assert!(wait(&|s| s.source.as_ref().is_some_and(|e| e.muted == source.muted)).is_some());
 }
+
+#[test]
+fn lists_devices_and_measures_the_default_output() {
+    let (send, states) = mpsc::channel::<AudioState>();
+    let Ok(audio) = Audio::spawn(move |state| drop(send.send(state.clone()))) else {
+        eprintln!("skipped: no PipeWire");
+        return;
+    };
+    let mut latest = None;
+    while let Ok(state) = states.recv_timeout(Duration::from_secs(2)) {
+        let done = state.sink.is_some();
+        latest = Some(state);
+        if done {
+            break;
+        }
+    }
+    let Some(state) = latest.filter(|s| s.sink.is_some()) else {
+        eprintln!("skipped: no default sink");
+        return;
+    };
+    let sink = state.sink.clone().unwrap();
+    assert!(state.sinks.contains(&sink), "the default is listed");
+    assert!(state.sinks.iter().all(|e| !e.name.is_empty()));
+    // Choosing the default again changes nothing but must be understood.
+    audio.set_default(Target::Sink, &sink.name);
+    audio.track_peak();
+    while let Ok(state) = states.recv_timeout(Duration::from_millis(500)) {
+        assert!((0.0..=1.0).contains(&state.peak));
+        assert_eq!(state.sink.as_ref().map(|s| &s.name), Some(&sink.name));
+    }
+}

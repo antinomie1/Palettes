@@ -61,7 +61,7 @@ Pastel exposes `$XDG_RUNTIME_DIR/pastel.$WAYLAND_DISPLAY.sock` (`PASTEL_SOCKET` 
 
 ## Audio
 
-Volume and mute are read from the default node's `Props` and written through its device's active `Route` (saved), like desktop mixers, so all mixers agree. Volumes use the cubic scale mixers display.
+Volume and mute are read from the default node's `Props` and written through its device's active `Route` (saved), like desktop mixers, so all mixers agree; application streams take `Props` directly. Volumes use the cubic scale mixers display. Every sink, source and playback stream is tracked; choosing a default writes `default.configured.audio.sink` (or `.source`) to the `default` metadata, as mixers do. The peak level comes from a passive capture of the default sink's monitor (`stream.capture.sink`), mixed to one channel by PipeWire; it keeps nothing awake and is reported at most every 40 ms.
 
 ## System services
 

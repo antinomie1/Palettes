@@ -1,10 +1,11 @@
-//! The PipeWire thread: registry, default metadata, node props, commands.
+//! The PipeWire thread: registry, default metadata, node props, commands,
+//! and the peak capture once asked for.
 //!
 //! Volume and mute are read from a node's `Props`. They are written through
 //! the device's active `Route` when the node has one, as mixers do, so the
 //! hardware route keeps and saves them; virtual nodes take `Props` directly.
 
-use crate::{AudioState, Command, Endpoint, Target, default_name};
+use crate::{AudioState, Command, Endpoint, Node as Which, Stream, Target, default_name};
 use pipewire::{
     self as pw,
     device::{Device, DeviceListener},
@@ -22,12 +23,23 @@ use pipewire::{
 };
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::mpsc};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Class {
+    Sink,
+    Source,
+    Stream,
+}
+
 struct Tracked {
     node: Node,
     _listener: NodeListener,
     name: String,
     description: String,
-    sink: bool,
+    class: Class,
+    /// A stream's application, its icon and what it plays.
+    app: String,
+    icon: String,
+    title: String,
     volumes: Vec<f32>,
     muted: bool,
     /// The device's global id and the route device (`card.profile.device`).
@@ -48,30 +60,57 @@ struct Graph {
     metadata: Vec<(Metadata, MetadataListener)>,
     default_sink: String,
     default_source: String,
+    pub peak: f32,
     last: Option<AudioState>,
 }
 
+fn average(volumes: &[f32]) -> f32 {
+    (volumes.iter().sum::<f32>() / volumes.len().max(1) as f32).cbrt()
+}
+
 impl Graph {
-    fn endpoint(&self, name: &str, sink: bool) -> Option<Endpoint> {
-        // Unknown until its props arrive: no made-up volume.
-        let node = self
-            .nodes
-            .values()
-            .find(|n| n.sink == sink && n.name == name && !n.volumes.is_empty())?;
-        let average = node.volumes.iter().sum::<f32>() / node.volumes.len().max(1) as f32;
-        Some(Endpoint {
-            name: node.name.clone(),
-            description: node.description.clone(),
-            volume: average.cbrt(),
-            muted: node.muted,
-        })
+    /// Nodes of `class` whose props arrived: no made-up volumes.
+    fn known(&self, class: Class) -> impl Iterator<Item = (&u32, &Tracked)> {
+        (self.nodes.iter()).filter(move |(_, n)| n.class == class && !n.volumes.is_empty())
+    }
+
+    fn endpoints(&self, class: Class) -> Vec<Endpoint> {
+        let mut found: Vec<Endpoint> = self
+            .known(class)
+            .map(|(_, node)| Endpoint {
+                name: node.name.clone(),
+                description: node.description.clone(),
+                volume: average(&node.volumes),
+                muted: node.muted,
+            })
+            .collect();
+        found.sort_by(|a, b| a.description.cmp(&b.description).then(a.name.cmp(&b.name)));
+        found
     }
 
     /// The state if it changed since the last report.
     fn changed(&mut self) -> Option<AudioState> {
+        let (sinks, sources) = (self.endpoints(Class::Sink), self.endpoints(Class::Source));
+        let pick = |list: &[Endpoint], name: &str| list.iter().find(|e| e.name == name).cloned();
+        let mut streams: Vec<Stream> = self
+            .known(Class::Stream)
+            .map(|(&id, node)| Stream {
+                id,
+                app: node.app.clone(),
+                icon: node.icon.clone(),
+                title: node.title.clone(),
+                volume: average(&node.volumes),
+                muted: node.muted,
+            })
+            .collect();
+        streams.sort_by(|a, b| a.app.cmp(&b.app).then(a.id.cmp(&b.id)));
         let state = AudioState {
-            sink: self.endpoint(&self.default_sink, true),
-            source: self.endpoint(&self.default_source, false),
+            sink: pick(&sinks, &self.default_sink),
+            source: pick(&sources, &self.default_source),
+            sinks,
+            sources,
+            streams,
+            peak: self.peak,
         };
         (self.last.as_ref() != Some(&state)).then(|| {
             self.last = Some(state.clone());
@@ -79,14 +118,15 @@ impl Graph {
         })
     }
 
-    fn target(&self, target: Target) -> Option<&Tracked> {
-        let (name, sink) = match target {
-            Target::Sink => (&self.default_sink, true),
-            Target::Source => (&self.default_source, false),
+    fn target(&self, which: Which) -> Option<&Tracked> {
+        let (name, class) = match which {
+            Which::Default(Target::Sink) => (&self.default_sink, Class::Sink),
+            Which::Default(Target::Source) => (&self.default_source, Class::Source),
+            Which::Stream(id) => return self.nodes.get(&id).filter(|n| n.class == Class::Stream),
         };
         self.nodes
             .values()
-            .find(|n| n.sink == sink && &n.name == name)
+            .find(|n| n.class == class && &n.name == name)
     }
 }
 
@@ -176,6 +216,19 @@ fn set_props(graph: &Graph, node: &Tracked, properties: Vec<Property>) {
 fn command(graph: &Graph, command: Command) {
     let target = match command {
         Command::Volume(target, _) | Command::Mute(target, _) => target,
+        Command::Default(target, name) => {
+            let key = match target {
+                Target::Sink => "default.configured.audio.sink",
+                Target::Source => "default.configured.audio.source",
+            };
+            // The session manager saves the choice and moves streams to it.
+            let value = format!("{{\"name\":{}}}", json_string(&name));
+            for (metadata, _) in &graph.metadata {
+                metadata.set_property(0, key, Some("Spa:String:JSON"), Some(&value));
+            }
+            return;
+        }
+        Command::Peak => return,
     };
     let Some(node) = graph.target(target) else {
         return;
@@ -194,6 +247,7 @@ fn command(graph: &Graph, command: Command) {
             spa::sys::SPA_PROP_mute,
             Value::Bool(muted.unwrap_or(!node.muted)),
         ),
+        Command::Default(..) | Command::Peak => return,
     };
     set_props(
         graph,
@@ -203,6 +257,21 @@ fn command(graph: &Graph, command: Command) {
             ..property
         }],
     );
+}
+
+/// `text` as a JSON string.
+fn json_string(text: &str) -> String {
+    let mut out = String::from('"');
+    for c in text.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            c if c.is_control() => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
 }
 
 pub fn run(
@@ -248,10 +317,10 @@ pub fn run(
             let get = |key| props.and_then(|p| p.get(key)).unwrap_or("").to_owned();
             match object.type_ {
                 ObjectType::Node => {
-                    let class = get("media.class");
-                    let sink = match class.as_str() {
-                        "Audio/Sink" => true,
-                        "Audio/Source" => false,
+                    let class = match get("media.class").as_str() {
+                        "Audio/Sink" => Class::Sink,
+                        "Audio/Source" => Class::Source,
+                        "Stream/Output/Audio" => Class::Stream,
                         _ => return,
                     };
                     let Ok(node) = registry.bind::<Node, _>(object) else {
@@ -259,7 +328,7 @@ pub fn run(
                     };
                     let (graph, report, id) =
                         (global_graph.clone(), global_report.clone(), object.id);
-                    let info_graph = global_graph.clone();
+                    let (info_graph, info_report) = (global_graph.clone(), global_report.clone());
                     let listener = node
                         .add_listener_local()
                         // The registry's properties are a subset; the route is only here.
@@ -269,9 +338,14 @@ pub fn run(
                             let route = props
                                 .get("card.profile.device")
                                 .and_then(|v| v.parse::<i32>().ok());
+                            let text = |key| props.get(key).unwrap_or("").to_owned();
                             if let Some(node) = info_graph.borrow_mut().nodes.get_mut(&id) {
                                 node.route = device.zip(route);
+                                node.app = text("application.name");
+                                node.icon = text("application.icon-name");
+                                node.title = text("media.name");
                             }
+                            info_report();
                         })
                         .param(move |_, kind, _, _, pod| {
                             if kind != ParamType::Props {
@@ -295,7 +369,10 @@ pub fn run(
                             _listener: listener,
                             name: get("node.name"),
                             description,
-                            sink,
+                            class,
+                            app: get("application.name"),
+                            icon: String::new(),
+                            title: String::new(),
                             volumes: Vec::new(),
                             muted: false,
                             route: None,
@@ -367,7 +444,23 @@ pub fn run(
         .register();
 
     let command_graph = graph.clone();
+    let (peak_core, peak_report) = (core.clone(), report.clone());
+    let peak = RefCell::new(None);
     let _commands = commands.attach(main_loop.loop_(), move |request| {
+        if matches!(request, Command::Peak) {
+            if peak.borrow().is_none() {
+                let (graph, report) = (command_graph.clone(), peak_report.clone());
+                let measured = crate::peak::capture(peak_core.clone(), move |level| {
+                    graph.borrow_mut().peak = level;
+                    report();
+                });
+                match measured {
+                    Ok(capture) => *peak.borrow_mut() = Some(capture),
+                    Err(e) => eprintln!("palettes: audio peaks: {e}"),
+                }
+            }
+            return;
+        }
         command(&command_graph.borrow(), request);
     });
     // The connection dropping (PipeWire restarting) ends the thread; the

@@ -180,6 +180,9 @@ Declare a state with one of these names and types; Palettes fills it and keeps i
 | `volume`, `mic_volume` | `float` | Default output / input volume, `1.0` = 100 % |
 | `muted`, `mic_muted` | `bool` | |
 | `audio_device` | `string` | Default output's description |
+| `audio_sinks`, `audio_sources` | `list<AudioDevice>` | Every output / input, by description; `default` marks the default |
+| `audio_streams` | `list<AudioStream>` | Applications playing sound, by application |
+| `audio_peak` | `float` | The default output's level, `0`–`1`, about 25 times a second; a passive capture runs once a document declares it |
 | `applications` | `list<App>` | Launchable applications, sorted by name |
 | `palette` | `list<string>` | The palette as `#rrggbb`, from the latest `Image { palette: true }`, most common first |
 | `battery` | `Battery` | UPower's display device and whether the system runs on battery |
@@ -227,6 +230,8 @@ Panel {
 record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
 record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool }
 record App { id: string; name: string; icon: string }
+record AudioDevice { name: string; description: string; volume: float; muted: bool; default: bool }
+record AudioStream { id: int; app: string; icon: string; title: string; volume: float; muted: bool }
 record Battery { present: bool; percent: float; state: string; charging: bool; time: int; icon: string; on_battery: bool }
 record Player { name: string; identity: string; icon: string; status: string; playing: bool; title: string; artist: string; album: string; art: string; length: float; can_next: bool; can_previous: bool; can_play: bool; can_seek: bool }
 record Notification { id: int; app: string; icon: string; summary: string; body: string; urgency: int; popup: bool; actions: int }
@@ -256,6 +261,8 @@ record BluetoothDevice { address: string; name: string; icon: string; paired: bo
 | `host.compositor(string)` | A compositor action, such as Pastel's `"focus-workspace-down"` |
 | `host.set_volume(float)`, `host.set_mic_volume(float)` | `0.0`–`1.5` |
 | `host.toggle_mute()`, `host.toggle_mic_mute()` | |
+| `host.set_default_sink(string)`, `host.set_default_source(string)` | Make a device (`AudioDevice.name`) the default; the session manager remembers it and moves streams |
+| `host.set_stream_volume(int, float)`, `host.toggle_stream_mute(int)` | An application's volume and mute, by `AudioStream.id` |
 | `host.set_power_profile(string)` | One of `power_profiles` |
 | `host.media_play_pause()`, `host.media_next()`, `host.media_previous()` | Ask `media` |
 | `host.media_seek(float)` | Go to a position in seconds |

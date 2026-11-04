@@ -10,7 +10,7 @@ A Wayland desktop shell and widget library in Rust: bars, docks, launchers, popu
 - **Popups**: `Panel { edge: popup }` opens beside the clicked control, sized to its content, and closes with a click elsewhere; tooltips leave the bar as popups
 - **Command line**: `palettes msg toggle launcher.aegle` or any action, for compositor keybindings
 - **Automatic assets**: theme icons by name or app id (SVG included), fonts from `fonts/`, paths relative to the document
-- **Services**: clock, workspaces and windows (Pastel IPC; on other compositors through ext-workspace-v1 and wlr-foreign-toplevel-management), PipeWire volume and mute, processor and memory use, installed applications
+- **Services**: clock, workspaces and windows (Pastel IPC; on other compositors through ext-workspace-v1 and wlr-foreign-toplevel-management), PipeWire devices, default switching, per-application volume and peak levels, processor and memory use, installed applications
 - **System services over D-Bus**: battery and power profiles (UPower), media players (MPRIS), a notification server, the system tray with menus (StatusNotifierItem, DBusMenu), Wi-Fi (NetworkManager), bluetooth (BlueZ), the backlight (through logind): `state battery`, `state tray`, `host.wifi_connect(...)`
 - **D-Bus in scripts**: `dbus.system(name, path)` calls methods and follows properties and signals, without blocking the shell
 - **Glass and curves**: rounded, translucent panels with the desktop blurred behind them (`radius`, `background: #1e1e2ea0`, `opacity`, `blur: true`), on compositors with ext-background-effect-v1 such as KWin and Pastel

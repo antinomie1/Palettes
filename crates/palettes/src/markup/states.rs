@@ -2,7 +2,7 @@
 //! Palettes keeps it current. Services start only for states some document
 //! declares. The record types are in the embedded `palettes.aegle`.
 
-use crate::services;
+use crate::services::{self, Services};
 use aegle_loader::{Data, View};
 use aegle_ui::{Node, Result};
 use palettes_audio::AudioState;
@@ -89,7 +89,43 @@ const DESKTOP: &[&str] = &[
     "focused_icon",
     "keyboard_layout",
 ];
-const AUDIO: &[&str] = &["volume", "muted", "mic_volume", "mic_muted", "audio_device"];
+const AUDIO: &[&str] = &[
+    "volume",
+    "muted",
+    "mic_volume",
+    "mic_muted",
+    "audio_device",
+    "audio_sinks",
+    "audio_sources",
+    "audio_streams",
+    "audio_peak",
+];
+
+fn device(e: &palettes_audio::Endpoint, default: Option<&palettes_audio::Endpoint>) -> Data {
+    record([
+        string(&e.name),
+        string(&e.description),
+        Data::Float(e.volume),
+        Data::Bool(e.muted),
+        Data::Bool(default.is_some_and(|d| d.name == e.name)),
+    ])
+}
+
+fn stream(s: &palettes_audio::Stream) -> Data {
+    let icons = services::icons();
+    let icon = (icons.lookup(&s.icon, 64))
+        .or_else(|| icons.for_app(&s.app, 64))
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    record([
+        Data::Int(i64::from(s.id)),
+        string(&s.app),
+        string(&icon),
+        string(&s.title),
+        Data::Float(s.volume),
+        Data::Bool(s.muted),
+    ])
+}
 
 fn desktop(view: &View, output: &str, desktop: &Desktop) {
     set(
@@ -135,6 +171,25 @@ fn audio(view: &View, audio: &AudioState) {
         "audio_device",
         string(sink.map_or("", |e| &e.description)),
     );
+    if view.get("audio_sinks").is_some() {
+        set(
+            view,
+            "audio_sinks",
+            list(audio.sinks.iter().map(|e| device(e, sink))),
+        );
+    }
+    if view.get("audio_sources").is_some() {
+        let sources = audio.sources.iter().map(|e| device(e, source));
+        set(view, "audio_sources", list(sources));
+    }
+    if view.get("audio_streams").is_some() {
+        set(
+            view,
+            "audio_streams",
+            list(audio.streams.iter().map(stream)),
+        );
+    }
+    set(view, "audio_peak", Data::Float(audio.peak));
 }
 
 /// Fills every shell state `view` declares and keeps it current while
@@ -164,6 +219,11 @@ pub fn bind(shell: &Shell, shared: &Rc<RefCell<View>>, owner: &Node, output: &st
             services::follow_audio(shell, owner, move |a| audio(&target.borrow(), a)),
             "audio",
         );
+        if view.get("audio_peak").is_some()
+            && let Ok(mixer) = shell.mixer()
+        {
+            mixer.track_peak();
+        }
     }
     if view.get("applications").is_some() {
         let apps = services::applications();

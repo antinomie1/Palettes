@@ -1,6 +1,6 @@
 [package]
 name = "palettes-audio"
-description = "PipeWire default sink and source: volume and mute, on a background thread"
+description = "PipeWire devices, streams, defaults, volume, mute and peak levels, on a background thread"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

@@ -20,6 +20,10 @@
 //   state mic_volume: float            default input volume
 //   state mic_muted: bool
 //   state audio_device: string         default output's description
+//   state audio_sinks: list<AudioDevice>    every output; `default` marks the default one
+//   state audio_sources: list<AudioDevice>  every input
+//   state audio_streams: list<AudioStream>  applications playing sound
+//   state audio_peak: float            the default output's level, 0–1, ~25 times a second
 //   state applications: list<App>      launchable applications, by name
 //   state palette: list<string>        "#rrggbb" colors of the latest `Image { palette: true }`;
 //                                      also tokens `palette.1` to `palette.5`
@@ -55,6 +59,8 @@
 //   host.toggle_mute()
 //   host.set_mic_volume(float)
 //   host.toggle_mic_mute()
+//   host.set_default_sink(string)  host.set_default_source(string)   by AudioDevice.name
+//   host.set_stream_volume(int, float)  host.toggle_stream_mute(int)   by AudioStream.id
 //   host.set_power_profile(string)
 //   host.media_play_pause()  host.media_next()  host.media_previous()
 //   host.media_seek(float)         seconds
@@ -82,6 +88,8 @@
 record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
 record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool }
 record App { id: string; name: string; icon: string }
+record AudioDevice { name: string; description: string; volume: float; muted: bool; default: bool }
+record AudioStream { id: int; app: string; icon: string; title: string; volume: float; muted: bool }
 record Battery { present: bool; percent: float; state: string; charging: bool; time: int; icon: string; on_battery: bool }
 record Player { name: string; identity: string; icon: string; status: string; playing: bool; title: string; artist: string; album: string; art: string; length: float; can_next: bool; can_previous: bool; can_play: bool; can_seek: bool }
 record Notification { id: int; app: string; icon: string; summary: string; body: string; urgency: int; popup: bool; actions: int }

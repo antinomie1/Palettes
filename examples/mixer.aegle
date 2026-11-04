@@ -1,0 +1,15 @@
+// A mixer popup: outputs to choose from, applications and their volume, the level.
+use "palettes.aegle"
+Panel {
+    edge: popup
+    state audio_sinks: list<AudioDevice> = []
+    state audio_streams: list<AudioStream> = []
+    state audio_peak: float = 0.0
+    for sink in audio_sinks key sink.name {
+        Button { text: sink.description; on clicked { host.set_default_sink(sink.name) } }
+    }
+    for s in audio_streams key s.id {
+        Row { Icon { name: s.icon }; Text { text: s.app + " " + s.title }; Button { text: "mute"; on clicked { host.toggle_stream_mute(s.id); host.set_stream_volume(s.id, 0.5) } } }
+    }
+    Text { text: str(audio_peak) }
+}
