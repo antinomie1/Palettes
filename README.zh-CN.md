@@ -74,7 +74,7 @@ cargo run --release -p palettes --example bar
 
 | Crate | 职责 |
 |---|---|
-| `palettes-wayland` | 面向 layer surface、弹出层、输出与输入的 Wayland 客户端，实现 aegle 平台契约 |
+| `palettes-wayland` | 面向 layer surface、弹出层、输出与输入（组合键、输入法、剪贴板）的 Wayland 客户端，实现 aegle 平台契约 |
 | `palettes-shell` | `Shell` 与 `Surface`：shell surface 上的 aegle UI 树与 Vulkan 呈现 |
 | `palettes-clock` | 本地时间格式化与按实时时钟对齐的计时 |
 | `palettes-workspace` | 与混成器无关的工作区与窗口模型；Pastel 后端 |

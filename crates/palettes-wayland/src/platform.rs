@@ -103,21 +103,24 @@ impl Platform for Wayland {
     fn connect() -> Result<Self> {
         let connection = Connection::connect_to_env().map_err(backend)?;
         let (globals, mut queue) = registry_queue_init::<State>(&connection).map_err(backend)?;
-        let mut state = State::new(&globals, queue.handle())?;
+        let mut state = State::new(&connection, &globals, queue.handle())?;
         // Two roundtrips: one for output and seat descriptions, one for what
         // binding them produced (xdg-output, capabilities, keymaps).
         for _ in 0..2 {
             queue.roundtrip(&mut state).map_err(backend)?;
         }
         state.events.retain(|e| !matches!(e, Event::Outputs));
-        let wake = eventfd(0, EventfdFlags::CLOEXEC | EventfdFlags::NONBLOCK).map_err(backend)?;
+        let wake = Arc::new(
+            eventfd(0, EventfdFlags::CLOEXEC | EventfdFlags::NONBLOCK).map_err(backend)?,
+        );
+        state.clipboard.wake = Some(Arc::clone(&wake));
         let mut preferences = Preferences::default();
         let portal = aegle_portal::connect(&mut preferences);
         Ok(Self {
             state,
             queue,
             connection,
-            wake: Arc::new(wake),
+            wake,
             preferences,
             portal,
         })
@@ -135,7 +138,7 @@ impl Platform for Wayland {
     }
 
     fn ime_available(&self) -> bool {
-        false
+        self.state.ime.available()
     }
 
     fn create_window(&mut self, options: WindowOptions<'_>) -> Result<WindowId> {
@@ -167,6 +170,7 @@ impl Platform for Wayland {
             .dispatch_pending(&mut self.state)
             .map_err(backend)?;
         self.state.fire_repeats(Instant::now());
+        self.state.deliver_clipboard();
         self.state.queue_redraws();
         if !self.state.events.is_empty() {
             return self.flush();
@@ -229,6 +233,7 @@ impl Platform for Wayland {
             .dispatch_pending(&mut self.state)
             .map_err(backend)?;
         self.state.fire_repeats(Instant::now());
+        self.state.deliver_clipboard();
         self.state.queue_redraws();
         self.flush()
     }
@@ -255,26 +260,31 @@ impl Platform for Wayland {
             .window_mut(window)
             .ok_or(Error::InvalidWindow)?
             .cursor = cursor;
-        for seat in &self.state.seats {
-            seat.show_cursor(window, cursor);
-        }
+        self.state.show_cursor(window, cursor);
         self.flush()
     }
 
     fn configure_ime(&mut self, window: WindowId, request: Option<ImeRequest>) -> Result<()> {
         self.state.window(window).ok_or(Error::InvalidWindow)?;
-        match request {
-            Some(_) => Err(Error::ImeUnavailable),
-            None => Ok(()),
-        }
+        self.state.ime.configure(window, request)?;
+        self.flush()
     }
 
-    fn set_clipboard(&mut self, _: WindowId, _: SeatId, _: &str) -> Result<()> {
-        Err(Error::Unsupported("clipboard"))
+    fn set_clipboard(&mut self, window: WindowId, seat: SeatId, text: &str) -> Result<()> {
+        self.state.window(window).ok_or(Error::InvalidWindow)?;
+        let seat = self.state.seat(seat)?;
+        let (global, serial) = (seat.global, seat.last_serial);
+        let state = &mut self.state;
+        state.clipboard.set(global, serial, text, &state.qh)?;
+        self.flush()
     }
 
-    fn request_clipboard(&mut self, _: WindowId, _: SeatId) -> Result<()> {
-        Err(Error::Unsupported("clipboard"))
+    fn request_clipboard(&mut self, window: WindowId, seat: SeatId) -> Result<()> {
+        self.state.window(window).ok_or(Error::InvalidWindow)?;
+        let global = self.state.seat(seat)?.global;
+        let state = &mut self.state;
+        state.clipboard.request(window, seat, global, &mut state.events)?;
+        self.flush()
     }
 
     fn accept_drag(&mut self, _: WindowId, _: SeatId, _: bool) -> Result<()> {

@@ -42,7 +42,8 @@ crates/
   palettes-assets/     Asset roots, freedesktop icon and desktop-entry lookup, fonts
                        directory, inotify watcher for hot reload. Pure.
   palettes-wayland/    Wayland client for shell surfaces: layer surfaces, popups,
-                       outputs, seat input, fractional scale, cursor shape.
+                       outputs, seat input (compose, text-input-v3, clipboard),
+                       fractional scale, cursor shape or xcursor theme.
                        Implements aegle_platform::{Platform, SurfacePlatform}.
   palettes-shell/      The host: Shell, Panel, Popup, Vulkan presentation, timers,
                        cross-thread channels. aegle-ui trees on palettes-wayland.

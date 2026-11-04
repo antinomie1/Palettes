@@ -193,10 +193,10 @@ impl Runtime {
         let now = self.clock.elapsed();
         for entry in &mut self.entries {
             entry.ui.advance_animations(now)?;
-            // No clipboard or drag yet: drop requests rather than queue them.
-            let _ = entry.ui.take_clipboard();
+            // Pastes answered at once land before this refresh records them.
+            crate::input::sync_text(&mut self.platform, entry);
+            // No drag and drop: drop requests rather than queue them.
             let _ = entry.ui.take_drag();
-            let _ = entry.ui.take_ime_state(4000);
             if entry.ui.refresh()? {
                 self.platform.request_redraw(entry.id)?;
             }

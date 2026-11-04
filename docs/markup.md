@@ -26,7 +26,7 @@ A column whose properties place its surface. All of them can be bound.
 | `span` | length | `0` | Length along the edge (width of a `center` panel); `0` stretches. A bar with a span is a dock |
 | `layer` | `background` `bottom` `top` `overlay` | by edge | Stacking layer |
 | `exclusive` | bool | bars: true | Reserve its space so windows avoid it |
-| `keyboard` | `none` `exclusive` `on_demand` | `none` | Keyboard focus policy; launchers use `exclusive` |
+| `keyboard` | `none` `exclusive` `on_demand` | `none` | Keyboard focus policy; launchers use `exclusive`. A focused `TextField` takes compose sequences (dead keys), input methods (text-input-v3) and the clipboard |
 | `offset` | length | `0` | Distance from the anchored edges |
 | `output` | line | `""` | Only this output (`DP-1`); empty for every output |
 | `blur` | bool | `false` | The compositor blurs the desktop behind the panel's rounded shape |

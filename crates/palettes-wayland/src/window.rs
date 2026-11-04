@@ -333,6 +333,7 @@ impl State {
         }
         window.surface.destroy();
         self.events.retain(|event| event.window() != Some(id));
+        self.ime.remove_window(id);
         for seat in &mut self.seats {
             seat.forget(id);
         }

@@ -1,5 +1,5 @@
-//! Seats: capabilities, pointer (with cursor shapes) and touch. The keyboard
-//! is in `keyboard.rs`.
+//! Seats: capabilities, pointer (with cursor shapes, or theme images in
+//! `cursor.rs`) and touch. The keyboard is in `keyboard.rs`.
 
 use crate::{keyboard::Keyboard, state::State};
 use aegle_platform::{
@@ -29,14 +29,16 @@ pub(crate) struct Seat {
     pub global: u32,
     pub id: SeatId,
     pub seat: WlSeat,
-    pointer: Option<WlPointer>,
-    cursor: Option<WpCursorShapeDeviceV1>,
+    pub pointer: Option<WlPointer>,
+    pub cursor: Option<WpCursorShapeDeviceV1>,
+    /// The cursor image's surface, without cursor-shape-v1.
+    pub cursor_surface: Option<WlSurface>,
     touch: Option<WlTouch>,
     pub keyboard: Keyboard,
     /// The serial of the latest press, which authorizes popup grabs.
     pub last_serial: u32,
-    pointer_focus: Option<WindowId>,
-    enter_serial: u32,
+    pub pointer_focus: Option<WindowId>,
+    pub enter_serial: u32,
     position: Point,
     /// Scrolling accumulated over one pointer frame.
     scroll: Point,
@@ -51,7 +53,7 @@ fn window_of(surface: &WlSurface) -> Option<WindowId> {
     surface.data::<WindowId>().copied()
 }
 
-fn shape(cursor: Cursor) -> Shape {
+pub(crate) fn shape(cursor: Cursor) -> Shape {
     match cursor {
         Cursor::Default => Shape::Default,
         Cursor::Text => Shape::Text,
@@ -74,6 +76,7 @@ impl Seat {
             seat,
             pointer: None,
             cursor: None,
+            cursor_surface: None,
             touch: None,
             keyboard: Keyboard::default(),
             last_serial: 0,
@@ -118,11 +121,15 @@ impl Seat {
                     .cursor_shape
                     .as_ref()
                     .map(|manager| manager.get_pointer(&pointer, qh, ()));
+                self.cursor_surface = state.cursor_surface(qh);
                 self.pointer = Some(pointer);
             }
             (false, true) => {
                 if let Some(cursor) = self.cursor.take() {
                     cursor.destroy();
+                }
+                if let Some(surface) = self.cursor_surface.take() {
+                    surface.destroy();
                 }
                 if let Some(pointer) = self.pointer.take() {
                     pointer.release();
@@ -133,14 +140,6 @@ impl Seat {
         }
     }
 
-    /// Shows `cursor` if the pointer is over `window`.
-    pub fn show_cursor(&self, window: WindowId, cursor: Cursor) {
-        if self.pointer_focus == Some(window)
-            && let Some(device) = &self.cursor
-        {
-            device.set_shape(self.enter_serial, shape(cursor));
-        }
-    }
 }
 
 impl State {
@@ -232,10 +231,10 @@ impl Dispatch<WlPointer, u32> for State {
                 seat.pointer_focus = Some(window);
                 seat.enter_serial = serial;
                 seat.position = Point::new(surface_x as f32, surface_y as f32);
-                if let Some((_, cursor)) = cursors.iter().find(|(id, _)| *id == window) {
-                    seat.show_cursor(window, *cursor);
-                }
                 state.pointer_event(global, window, PointerKind::Move, None);
+                if let Some((_, cursor)) = cursors.iter().find(|(id, _)| *id == window) {
+                    state.show_cursor(window, *cursor);
+                }
             }
             wl_pointer::Event::Leave { .. } => {
                 if let Some(window) = seat.pointer_focus.take() {

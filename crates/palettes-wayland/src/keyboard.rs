@@ -1,5 +1,6 @@
-//! The keyboard: xkbcommon keymaps, translation into aegle keys and text, and
-//! key repeat, which the loop times through [`State::next_repeat`].
+//! The keyboard: xkbcommon keymaps, translation into aegle keys and text,
+//! compose sequences (dead keys, the Compose key) from the locale's table,
+//! and key repeat, which the loop times through [`State::next_repeat`].
 #![allow(unsafe_code)]
 
 use crate::state::State;
@@ -12,18 +13,23 @@ use wayland_client::{
         wl_seat::WlSeat,
     },
 };
-use xkbcommon::xkb::{self, keysyms};
+use xkbcommon::xkb::{self, compose, keysyms};
 
 struct Repeat {
     key: u32,
     next: Instant,
     time: u32,
+    /// What the first press typed; a repeat types it again rather than
+    /// feeding the compose sequence anew.
+    text: Option<String>,
 }
 
 pub(crate) struct Keyboard {
     keyboard: Option<WlKeyboard>,
     context: xkb::Context,
     state: Option<xkb::State>,
+    /// `None` where the locale has no compose table.
+    compose: Option<compose::State>,
     focus: Option<WindowId>,
     modifiers: Modifiers,
     repeat: Option<Repeat>,
@@ -38,6 +44,7 @@ impl Default for Keyboard {
             keyboard: None,
             context: xkb::Context::new(xkb::CONTEXT_NO_FLAGS),
             state: None,
+            compose: None,
             focus: None,
             modifiers: Modifiers::default(),
             repeat: None,
@@ -93,6 +100,49 @@ impl Keyboard {
         self.repeat = None;
     }
 
+    /// The compose table of the user's locale, as `setlocale` would pick it.
+    fn load_compose(&mut self) {
+        let locale = ["LC_ALL", "LC_CTYPE", "LANG"]
+            .into_iter()
+            .filter_map(std::env::var_os)
+            .find(|v| !v.is_empty())
+            .unwrap_or_else(|| "C".into());
+        self.compose = compose::Table::new_from_locale(
+            &self.context,
+            &locale,
+            compose::COMPILE_NO_FLAGS,
+        )
+        .ok()
+        .map(|table| compose::State::new(&table, compose::STATE_NO_FLAGS));
+    }
+
+    /// The text a press types: what a compose sequence finishes, nothing
+    /// while one is under way or after it is cancelled, else the key's own.
+    fn press_text(&mut self, key: u32) -> Option<String> {
+        let state = self.state.as_ref()?;
+        let code = xkb::Keycode::new(key + 8);
+        let text = if let Some(compose) = self.compose.as_mut()
+            && compose.feed(state.key_get_one_sym(code)) == compose::FeedResult::Accepted
+        {
+            match compose.status() {
+                compose::Status::Composing => None,
+                compose::Status::Composed => {
+                    let text = compose.utf8();
+                    compose.reset();
+                    text
+                }
+                compose::Status::Cancelled => {
+                    compose.reset();
+                    None
+                }
+                compose::Status::Nothing => Some(state.key_get_utf8(code)),
+            }
+        } else {
+            Some(state.key_get_utf8(code))
+        };
+        text.filter(|t| !t.is_empty() && !t.chars().any(char::is_control))
+    }
+
     pub fn forget(&mut self, id: WindowId) {
         if self.focus == Some(id) {
             self.focus = None;
@@ -113,21 +163,19 @@ impl Keyboard {
         }
     }
 
-    /// The key event for evdev `key`, or `None` before a keymap or focus.
+    /// The key event for evdev `key` typing `text`, or `None` before a
+    /// keymap or focus.
     fn event(
         &self,
         seat: aegle_platform::SeatId,
         key: u32,
         pressed: bool,
+        text: Option<String>,
         repeat: bool,
         time: u32,
     ) -> Option<Event> {
         let (state, window) = (self.state.as_ref()?, self.focus?);
-        let code = xkb::Keycode::new(key + 8);
-        let sym = state.key_get_one_sym(code).raw();
-        let text = pressed
-            .then(|| state.key_get_utf8(code))
-            .filter(|t| !t.is_empty() && !t.chars().any(char::is_control));
+        let sym = state.key_get_one_sym(xkb::Keycode::new(key + 8)).raw();
         Some(Event::Key {
             window,
             seat,
@@ -164,8 +212,8 @@ impl State {
             // Late wakes (a busy frame) repeat once, not in a burst.
             repeat.next = (repeat.next + interval).max(now);
             repeat.time = repeat.time.wrapping_add(interval.as_millis() as u32);
-            let (key, time) = (repeat.key, repeat.time);
-            if let Some(event) = keyboard.event(seat.id, key, true, true, time) {
+            let (key, time, text) = (repeat.key, repeat.time, repeat.text.clone());
+            if let Some(event) = keyboard.event(seat.id, key, true, text, true, time) {
                 self.events.push_back(event);
             }
         }
@@ -202,6 +250,9 @@ impl Dispatch<WlKeyboard, u32> for State {
                     )
                 };
                 keyboard.state = keymap.ok().flatten().map(|keymap| xkb::State::new(&keymap));
+                if keyboard.compose.is_none() {
+                    keyboard.load_compose();
+                }
             }
             wl_keyboard::Event::Enter {
                 serial, surface, ..
@@ -219,6 +270,10 @@ impl Dispatch<WlKeyboard, u32> for State {
             }
             wl_keyboard::Event::Leave { .. } => {
                 keyboard.repeat = None;
+                // A sequence begun in one window does not finish in another.
+                if let Some(compose) = keyboard.compose.as_mut() {
+                    compose.reset();
+                }
                 if let Some(window) = keyboard.focus.take() {
                     state.events.push_back(Event::KeyboardFocus {
                         window,
@@ -241,16 +296,18 @@ impl Dispatch<WlKeyboard, u32> for State {
                     .state
                     .as_ref()
                     .is_some_and(|s| s.get_keymap().key_repeats(xkb::Keycode::new(key + 8)));
+                let text = pressed.then(|| keyboard.press_text(key)).flatten();
                 if pressed && repeats && keyboard.rate > 0 {
                     keyboard.repeat = Some(Repeat {
                         key,
                         next: Instant::now() + keyboard.delay,
                         time,
+                        text: text.clone(),
                     });
                 } else if keyboard.repeat.as_ref().is_some_and(|r| r.key == key) {
                     keyboard.repeat = None;
                 }
-                if let Some(event) = keyboard.event(id, key, pressed, false, time) {
+                if let Some(event) = keyboard.event(id, key, pressed, text, false, time) {
                     state.events.push_back(event);
                 }
             }

@@ -1,6 +1,6 @@
 //! Globals, the registry and the small protocol objects every surface shares.
 
-use crate::{output::Output, pointer::Seat, window::Window};
+use crate::{clipboard::Clipboard, cursor::Themes, ime::Ime, output::Output, pointer::Seat, window::Window};
 use aegle_platform::{Event, OutputId, WindowId};
 use std::collections::VecDeque;
 use wayland_client::{
@@ -12,6 +12,7 @@ use wayland_client::{
         wl_output::WlOutput,
         wl_registry::{self, WlRegistry},
         wl_seat::WlSeat,
+        wl_shm::WlShm,
         wl_surface::{self, WlSurface},
     },
 };
@@ -56,10 +57,15 @@ pub(crate) struct State {
     pub events: VecDeque<Event>,
     pub next_window: u64,
     pub next_seat: u32,
+    pub clipboard: Clipboard,
+    pub ime: Ime,
+    /// Cursor images, where the compositor has no cursor-shape-v1.
+    pub themes: Option<Themes>,
 }
 
 impl State {
     pub fn new(
+        connection: &Connection,
         globals: &GlobalList,
         qh: QueueHandle<State>,
     ) -> Result<Self, aegle_platform::Error> {
@@ -76,6 +82,15 @@ impl State {
             xdg_output: globals.bind(&qh, 2..=3, ()).ok(),
             background_effect: globals.bind(&qh, 1..=1, ()).ok(),
         };
+        let themes = match globals_bound.cursor_shape {
+            Some(_) => None,
+            None => globals
+                .bind::<WlShm, _, _>(&qh, 1..=1, ())
+                .ok()
+                .map(|shm| Themes::new(connection.clone(), shm)),
+        };
+        let clipboard = Clipboard::new(globals.bind(&qh, 1..=3, ()).ok());
+        let ime = Ime::new(globals.bind(&qh, 1..=1, ()).ok());
         let mut state = Self {
             globals: globals_bound,
             qh,
@@ -85,6 +100,9 @@ impl State {
             events: VecDeque::new(),
             next_window: 1,
             next_seat: 0,
+            clipboard,
+            ime,
+            themes,
         };
         let registry = globals.registry();
         for global in globals.contents().clone_list() {
@@ -103,6 +121,8 @@ impl State {
             let seat = registry.bind::<WlSeat, _, _>(name, version.min(7), &self.qh, name);
             let id = aegle_platform::SeatId(self.next_seat);
             self.next_seat += 1;
+            self.clipboard.add_seat(&seat, name, &self.qh);
+            self.ime.add_seat(&seat, id, name, &self.qh);
             self.seats.push(Seat::new(name, id, seat));
         }
     }
@@ -113,6 +133,8 @@ impl State {
             self.events.push_back(Event::Outputs);
         }
         if let Some(index) = self.seats.iter().position(|s| s.global == name) {
+            self.clipboard.remove_seat(name);
+            self.ime.remove_seat(name);
             self.seats.remove(index).release();
         }
     }
@@ -123,6 +145,18 @@ impl State {
 
     pub fn window_mut(&mut self, id: WindowId) -> Option<&mut Window> {
         self.windows.iter_mut().find(|w| w.id == id)
+    }
+
+    pub fn seat(&self, id: aegle_platform::SeatId) -> Result<&Seat, aegle_platform::Error> {
+        (self.seats.iter().find(|s| s.id == id))
+            .ok_or_else(|| aegle_platform::Error::backend("no such seat"))
+    }
+
+    /// Queues clipboard texts read since the last dispatch.
+    pub fn deliver_clipboard(&mut self) {
+        let windows = &self.windows;
+        self.clipboard
+            .deliver(&mut self.events, |id| windows.iter().any(|w| w.id == id));
     }
 
     pub fn output(&self, id: OutputId) -> Option<&Output> {
@@ -235,6 +269,7 @@ impl Dispatch<WlSurface, WindowId> for State {
 }
 
 delegate_noop!(State: ignore WlCompositor);
+delegate_noop!(State: ignore WlShm);
 delegate_noop!(State: ignore ZwlrLayerShellV1);
 delegate_noop!(State: ignore WpViewporter);
 delegate_noop!(State: ignore WpViewport);

@@ -21,7 +21,11 @@ One UI thread. `Shell::dispatch`:
 3. Routes events to trees; drains channel values on wake; resyncs per-output panels on output changes.
 4. Presents surfaces the compositor asked to draw: each frame is requested with a frame callback, so drawing follows the compositor's pace and stops when nothing changes.
 
-Background threads, each blocked until it has something to say: clock (`timerfd` on the realtime clock, armed for the next second or minute, cancelled by clock changes), compositor IPC reader and command writer, PipeWire loop, inotify watcher.
+Background threads, each blocked until it has something to say: clock (`timerfd` on the realtime clock, armed for the next second or minute, cancelled by clock changes), compositor IPC reader and command writer, PipeWire loop, inotify watcher. Clipboard pipes are read and written on short-lived threads; a finished read comes back through a channel and the wake `eventfd`, and pasting this client's own selection skips the pipe.
+
+## Input
+
+Keys go through xkbcommon and the locale's compose table, so dead keys and the Compose key type what they finish; a held key repeats the text of its first press. Each seat has a text-input-v3 object, enabled while the focused tree has an editor (`Ui::take_ime_state`); answers to older commits are applied but hold back new state until the input method catches up. Each seat has a `wl_data_device` for text selections, authorized by the seat's latest press. Cursors use cursor-shape-v1; without it, images come from the xcursor theme (`XCURSOR_THEME`, `XCURSOR_SIZE`), loaded on first use per integer scale.
 
 ## Rendering
 

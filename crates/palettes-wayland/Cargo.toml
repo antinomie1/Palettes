@@ -1,6 +1,6 @@
 [package]
 name = "palettes-wayland"
-description = "A Wayland client for desktop-shell surfaces: layer surfaces, popups, outputs and seat input"
+description = "A Wayland client for desktop-shell surfaces: layer surfaces, popups, outputs, seat input, input methods and the clipboard"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,8 +12,9 @@ aegle-platform.workspace = true
 aegle-portal.workspace = true
 aegle-types = { workspace = true, features = ["std"] }
 raw-window-handle.workspace = true
-rustix = { version = "1", features = ["event", "std"] }
+rustix = { version = "1", features = ["event", "pipe", "std"] }
 wayland-client.workspace = true
+wayland-cursor.workspace = true
 wayland-protocols = { workspace = true, features = ["unstable"] }
 wayland-protocols-wlr.workspace = true
 xkbcommon = { workspace = true, features = ["wayland"] }
