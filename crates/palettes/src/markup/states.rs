@@ -105,6 +105,7 @@ const DESKTOP: &[&str] = &[
     "focused_icon",
     "output_window",
     "keyboard_layout",
+    "compositor_colors",
 ];
 const AUDIO: &[&str] = &[
     "volume",
@@ -171,6 +172,13 @@ fn desktop(view: &View, output: &str, desktop: &Desktop, selection: &mut Selecti
         set(view, "output_window", selected);
     }
     set(view, "keyboard_layout", string(&desktop.keyboard_layout));
+    let c = &desktop.colors;
+    let colors = [&c.background, &c.active, &c.inactive, &c.shadow];
+    set(
+        view,
+        "compositor_colors",
+        record(colors.into_iter().map(|c| string(c))),
+    );
 }
 
 fn audio(view: &View, audio: &AudioState) {

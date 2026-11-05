@@ -1281,7 +1281,7 @@ dependencies = [
 [[package]]
 name = "pastel-ipc"
 version = "0.1.0"
-source = "git+https://github.com/antinomie1/Pastel?rev=cd1c5f1ecd36056334f0bdc094f99b1b8bb118e7#cd1c5f1ecd36056334f0bdc094f99b1b8bb118e7"
+source = "git+https://github.com/antinomie1/Pastel?rev=79fde7375b162595b3cda3fb8b474ccfd02960a7#79fde7375b162595b3cda3fb8b474ccfd02960a7"
 dependencies = [
  "serde",
  "serde_json",

@@ -19,6 +19,7 @@
 //   state output_window: Toplevel      this output's selected window: the focused one, else the one
 //                                      last focused on its shown workspace; id 0 for none
 //   state keyboard_layout: string      the active layout's name, such as "English (US)" (Pastel)
+//   state compositor_colors: Colors    the compositor's colors as "#rrggbbaa", following its config (Pastel)
 //   state volume: float                default output volume, 1.0 = 100 %
 //   state muted: bool
 //   state mic_volume: float            default input volume
@@ -91,6 +92,7 @@
 // actions. `Panel { edge: popup }` opens beside the control under the pointer.
 
 record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
+record Colors { background: string; active: string; inactive: string; shadow: string }
 record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool; floating: bool; fullscreen: bool }
 record App { id: string; name: string; icon: string }
 record AudioDevice { name: string; description: string; volume: float; muted: bool; default: bool }

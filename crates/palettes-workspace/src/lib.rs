@@ -29,6 +29,22 @@ pub struct Desktop {
     /// The active keyboard layout's name, such as `English (US)`; empty
     /// where the compositor does not say (only Pastel does).
     pub keyboard_layout: String,
+    /// The colors the compositor draws with; empty where it does not say
+    /// (only Pastel does).
+    pub colors: Colors,
+}
+
+/// Compositor colors as `#rrggbbaa`.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Colors {
+    /// Shown where nothing covers the screen.
+    pub background: String,
+    /// The focused window's border.
+    pub active: String,
+    /// Other windows' borders.
+    pub inactive: String,
+    /// Window shadows.
+    pub shadow: String,
 }
 
 /// A monitor.

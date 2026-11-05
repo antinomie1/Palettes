@@ -1,6 +1,6 @@
 //! Pastel through `pastel-ipc`.
 
-use crate::{Command, Desktop, Output, Window, Workspace};
+use crate::{Colors, Command, Desktop, Output, Window, Workspace};
 use pastel_ipc::{Client, Reply, Request};
 use std::{io, path::PathBuf, sync::mpsc};
 
@@ -54,6 +54,12 @@ pub fn desktop(state: pastel_ipc::State) -> Desktop {
             })
             .collect(),
         keyboard_layout: state.keyboard_layout,
+        colors: Colors {
+            background: state.colors.background,
+            active: state.colors.active,
+            inactive: state.colors.inactive,
+            shadow: state.colors.shadow,
+        },
     }
 }
 

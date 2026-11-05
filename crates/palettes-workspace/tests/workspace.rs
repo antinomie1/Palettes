@@ -43,6 +43,12 @@ fn state() -> pastel_ipc::State {
             fullscreen: false,
         }],
         keyboard_layout: "English (US)".into(),
+        colors: pastel_ipc::Colors {
+            background: "#1e2028ff".into(),
+            active: "#a6c8ffff".into(),
+            inactive: "#4a4f5cff".into(),
+            shadow: "#00000060".into(),
+        },
     }
 }
 
@@ -89,6 +95,7 @@ fn follows_and_drives_pastel() {
     assert_eq!(desktop.focused_workspace().unwrap().name, "1");
     assert_eq!(desktop.workspaces_on("DP-1").count(), 2);
     assert_eq!(desktop.keyboard_layout, "English (US)");
+    assert_eq!(desktop.colors.active, "#a6c8ffff");
     // Hanging up ends with an empty desktop.
     assert_eq!(
         seen.recv_timeout(Duration::from_secs(2)).unwrap(),
