@@ -224,6 +224,27 @@ impl Dispatch<XdgWmBase, ()> for State {
     }
 }
 
+/// A `wl_display.sync` after a window's placement changed: the compositor
+/// has applied it once this is done.
+pub(crate) struct Placed(pub WindowId);
+
+impl Dispatch<WlCallback, Placed> for State {
+    fn event(
+        state: &mut Self,
+        _: &WlCallback,
+        event: wl_callback::Event,
+        placed: &Placed,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+    ) {
+        if let wl_callback::Event::Done { .. } = event
+            && let Some(window) = state.window_mut(placed.0)
+        {
+            window.unsettled = window.unsettled.saturating_sub(1);
+        }
+    }
+}
+
 /// A frame callback: the compositor shows the window's last frame, so it may
 /// draw the next.
 impl Dispatch<WlCallback, WindowId> for State {

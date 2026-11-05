@@ -31,6 +31,7 @@ A column whose properties place its surface. All of them can be bound.
 | `output` | line | `""` | Only this output (`DP-1`); empty for every output |
 | `blur` | bool | `false` | The compositor blurs the desktop behind the panel's rounded shape |
 | `passive` | bool | `false` | A popup that takes no keyboard and stays open on clicks elsewhere |
+| `movable` | bool | `false` | A press on no control drags the panel around its output, as a window by its title bar; it stays where it is dropped until it closes or its placement changes |
 
 Layout properties (`padding`, `gap`, `background`, …) apply as on `Column`.
 

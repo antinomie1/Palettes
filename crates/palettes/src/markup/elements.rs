@@ -55,6 +55,8 @@ pub struct Placement {
     pub output: String,
     /// A popup without a grab: no keyboard, and clicks elsewhere keep it.
     pub passive: bool,
+    /// A press on no control drags it around its output.
+    pub movable: bool,
 }
 
 impl Default for Placement {
@@ -69,6 +71,7 @@ impl Default for Placement {
             offset: 0,
             output: String::new(),
             passive: false,
+            movable: false,
         }
     }
 }
@@ -176,10 +179,14 @@ fn update(container: &Container, change: impl FnOnce(&mut Placement)) {
             .as_ref()
             .filter(|_| panel.placement != before)
             .filter(|_| !matches!(panel.placement.edge, Edge::Popup | Edge::Lock))?;
-        Some((surface.clone(), panel.placement.options()))
+        Some((
+            surface.clone(),
+            panel.placement.options(),
+            panel.placement.movable,
+        ))
     });
-    if let Some((surface, options)) = moved
-        && let Err(e) = surface.set_placement(options)
+    if let Some((surface, options, movable)) = moved
+        && let Err(e) = (surface.set_placement(options)).and_then(|()| surface.set_movable(movable))
     {
         eprintln!("palettes: moving a panel: {e}");
     }
@@ -206,16 +213,17 @@ pub(crate) fn placement(node: &Node) -> Option<Placement> {
 
 /// Ties the `Panel` at `node` to its surface, so later changes move it.
 pub(crate) fn attach(node: &Node, surface: &Surface) {
-    let blur = PANELS.with_borrow_mut(|panels| {
+    let looks = PANELS.with_borrow_mut(|panels| {
         let panel = panels.get_mut(&node.id())?;
         panel.surface = Some(surface.clone());
-        Some(panel.blur)
+        Some((panel.blur, panel.placement.movable))
     });
-    let Some(blur) = blur else { return };
+    let Some((blur, movable)) = looks else { return };
     // The panel is the surface's shape: clicks around its corners go through.
     let shaped = surface
         .set_input(node, true)
-        .and_then(|()| surface.set_blur(node, blur));
+        .and_then(|()| surface.set_blur(node, blur))
+        .and_then(|()| surface.set_movable(movable));
     if let Err(e) = shaped {
         eprintln!("palettes: shaping a panel: {e}");
     }
@@ -389,6 +397,7 @@ element! {
         set offset: length => |p, v| update(p, |s| s.offset = v as i32);
         set output: line => |p, v| update(p, |s| s.output = v.to_owned());
         set passive: bool => |p, v| update(p, |s| s.passive = v);
+        set movable: bool => |p, v| update(p, |s| s.movable = v);
         set blur: bool => set_blur;
     }
     /// An icon by theme name or application id, or an image path; `size` dp

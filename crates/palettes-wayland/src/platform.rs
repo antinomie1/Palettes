@@ -35,6 +35,22 @@ fn backend(error: impl std::fmt::Display) -> Error {
 }
 
 impl Wayland {
+    /// A layer surface's placement and the size asked for it; `None` for
+    /// other surfaces.
+    pub fn layer(&self, window: WindowId) -> Option<(LayerOptions, PixelSize)> {
+        match &self.state.window(window)?.role {
+            crate::window::Role::Layer { options, size, .. } => Some((*options, *size)),
+            _ => None,
+        }
+    }
+
+    /// Whether the compositor has applied every placement change of
+    /// `window`, so the pointer positions it reports now are relative to
+    /// where the window is.
+    pub fn placed(&self, window: WindowId) -> bool {
+        self.state.window(window).is_none_or(|w| w.unsettled == 0)
+    }
+
     /// Every connected output, as [`Platform::outputs`] without the `Result`.
     pub fn output_list(&self) -> Vec<OutputInfo> {
         self.state.outputs.iter().map(|o| o.info()).collect()
@@ -183,6 +199,14 @@ impl Platform for Wayland {
 
     fn set_layer(&mut self, window: WindowId, layer: LayerOptions, size: PixelSize) -> Result<()> {
         self.state.set_layer(window, layer, size)?;
+        // Requests run in order, so the reply follows the commit that moved it.
+        let qh = self.state.qh.clone();
+        self.connection
+            .display()
+            .sync(&qh, crate::state::Placed(window));
+        if let Some(window) = self.state.window_mut(window) {
+            window.unsettled += 1;
+        }
         self.flush()
     }
 

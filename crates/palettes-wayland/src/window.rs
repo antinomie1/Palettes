@@ -61,6 +61,10 @@ pub(crate) struct Window {
     pub frame_requested: bool,
     /// A frame was presented and the compositor has not asked for the next one.
     pub frame_pending: bool,
+    /// Placement changes sent that the compositor has not yet confirmed
+    /// applying; until it has, pointer positions may be relative to where
+    /// the surface was.
+    pub unsettled: u32,
 }
 
 fn layer(layer: Layer) -> zwlr_layer_shell_v1::Layer {
@@ -193,6 +197,7 @@ impl State {
             redraw_requested: true,
             redraw_queued: false,
             frame_requested: false,
+            unsettled: 0,
             frame_pending: false,
         });
     }

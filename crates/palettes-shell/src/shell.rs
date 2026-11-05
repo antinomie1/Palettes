@@ -372,8 +372,16 @@ impl Shell {
                 let Some(id) = event.window() else {
                     return Ok(());
                 };
+                let pointer = match &event {
+                    Event::Pointer { kind, position, .. } => Some((*kind, *position)),
+                    _ => None,
+                };
                 match runtime.entries.iter_mut().find(|e| e.id == id) {
-                    Some(entry) => entry.event(event),
+                    Some(entry) => entry.event(event)?,
+                    None => return Ok(()),
+                }
+                match pointer {
+                    Some((kind, position)) => runtime.follow_drag(id, &kind, position),
                     None => Ok(()),
                 }
             }

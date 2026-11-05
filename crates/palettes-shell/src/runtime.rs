@@ -50,6 +50,10 @@ pub(crate) struct Entry {
     pub lock: bool,
     /// Its last frame failed to draw.
     pub failed: bool,
+    /// A press on no control drags it ([`crate::Surface::set_movable`]).
+    pub movable: bool,
+    /// Where the press that is moving it was, in its own coordinates.
+    pub moving: Option<aegle_ui::Point>,
 }
 
 pub(crate) struct Runtime {
@@ -168,6 +172,8 @@ impl Runtime {
             tooltip: None,
             lock: false,
             failed: false,
+            movable: false,
+            moving: None,
         });
         Ok((id, ui))
     }

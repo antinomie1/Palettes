@@ -11,6 +11,7 @@
 
 mod channel;
 mod input;
+mod moving;
 mod options;
 mod runtime;
 mod shape;

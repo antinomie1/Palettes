@@ -89,6 +89,19 @@ impl Surface {
             .set_layer(self.id, options.layer, size)?)
     }
 
+    /// Lets a press on no control drag the surface around its output, as a
+    /// window by its title bar: a centered settings panel, say. It stays
+    /// where it is dropped until it closes or is placed again.
+    pub fn set_movable(&self, movable: bool) -> Result<()> {
+        let inner = self.inner()?;
+        let mut runtime = inner.runtime.borrow_mut();
+        if let Some(entry) = runtime.entries.iter_mut().find(|e| e.id == self.id) {
+            entry.movable = movable;
+            entry.moving = None;
+        }
+        Ok(())
+    }
+
     /// Takes pointer and touch input only on `node`, a control of this
     /// surface, within its rounded bounds; clicks elsewhere reach what is
     /// below. Several nodes, like separate pills, can each take input.
