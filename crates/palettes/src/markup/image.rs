@@ -5,7 +5,7 @@
 //! palette. A view shows its file again when the file changes.
 
 use super::follow::Followers;
-pub use super::pixels::{blur, palette, shrink};
+pub use super::pixels::{blur, fit, palette, shrink};
 use aegle_ui::{Color, Node, NodeId, Theme, Token};
 use aegle_widgets::ImageView;
 use palettes_shell::Shell;
@@ -16,6 +16,8 @@ use std::{cell::Cell, cell::RefCell, collections::HashMap, path::Path};
 pub(crate) struct Look {
     /// The square size SVGs are rasterized at.
     pub pixels: u32,
+    /// An icon, which bitmaps shrink to about `pixels` for.
+    pub icon: bool,
     /// Blur radius in the image's pixels.
     pub blur: f32,
     /// Its colors become the shell's palette.
@@ -26,6 +28,7 @@ impl Default for Look {
     fn default() -> Self {
         Self {
             pixels: IMAGE_PIXELS,
+            icon: false,
             blur: 0.0,
             palette: false,
         }
@@ -190,9 +193,17 @@ pub(crate) fn show(view: &ImageView, path: &Path) -> aegle_ui::Result<()> {
     load(view, &path, look(view))
 }
 
-/// [`show`], SVGs rasterized `pixels` square.
+/// [`show`] as an icon `pixels` square: SVGs rasterized at that size,
+/// larger bitmaps shrunk close to it.
 pub(crate) fn show_at(view: &ImageView, path: &Path, pixels: u32) -> aegle_ui::Result<()> {
-    restyle(view, |look| look.pixels = pixels, false);
+    restyle(
+        view,
+        |look| {
+            look.pixels = pixels;
+            look.icon = true;
+        },
+        false,
+    );
     show(view, path)
 }
 
@@ -282,10 +293,14 @@ fn load(view: &ImageView, path: &Path, look: Look) -> aegle_ui::Result<()> {
     if large {
         image = shrink(&image, max);
     }
+    let oversized = look.icon && image.width().max(image.height()) >= 2 * look.pixels;
+    if oversized {
+        image = fit(&image, look.pixels);
+    }
     if look.blur >= 1.0 {
         image = blur(&image, look.blur);
     }
-    if large || look.blur >= 1.0 {
+    if large || oversized || look.blur >= 1.0 {
         view.set_image(&image);
     }
     Ok(())

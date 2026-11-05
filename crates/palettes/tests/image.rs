@@ -1,8 +1,8 @@
-//! Bitmaps too large for a surface's memory budget shrink once; blurs and
-//! palettes come from the pixels.
+//! Bitmaps too large for a surface's memory budget shrink once, as do icons
+//! far larger than they show; blurs and palettes come from the pixels.
 
 use aegle_ui::scene::Image;
-use palettes::markup::image::{blur, palette, parse_color, shrink};
+use palettes::markup::image::{blur, fit, palette, parse_color, shrink};
 use palettes_shell::MAX_IMAGE_PIXELS;
 
 #[test]
@@ -96,4 +96,17 @@ fn script_colors_parse_with_or_without_alpha() {
     for bad in ["1e2028", "#fff", "#1e20", "#1e2028a", "#gggggg", "#ééé"] {
         assert_eq!(parse_color(bad), None, "{bad}");
     }
+}
+
+#[test]
+fn icons_far_larger_than_they_show_shrink_close_to_their_size() {
+    let pixmap = Image::new(256, 256, vec![255; 256 * 256 * 4]).unwrap();
+    assert_eq!(fit(&pixmap, 16).width(), 16);
+    assert_eq!(fit(&pixmap, 36).width(), 37, "a whole factor, no smaller");
+    let small = Image::new(24, 24, vec![255; 24 * 24 * 4]).unwrap();
+    assert_eq!(
+        fit(&small, 16).width(),
+        24,
+        "under twice its size, it stays"
+    );
 }

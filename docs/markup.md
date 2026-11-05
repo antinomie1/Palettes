@@ -172,7 +172,7 @@ Text { text: time; opacity_animation: [[0.5, 1], 800ms, ease_in_out, alternate] 
 
 ## Icon
 
-`Icon { name: "audio-volume-high"; size: 16dp }`. `name` is a theme icon name, an application id (`firefox`, `org.kde.dolphin`) or a path. Names resolve through the user's icon theme (`PALETTES_ICON_THEME`, KDE or GTK settings), its parents and `hicolor`; app ids through installed desktop entries. Paths resolve like other assets. Icons are picked and SVGs rasterized for their size on the densest output (`size: 18dp` at scale 2 is 36 px), again when that scale changes. Icon paths in records (`Toplevel.icon`, `App.icon`) can be passed to `name` as they are. `on context_menu` runs on a secondary press over the icon, as on a `Button`, so a right-click on a tray icon can open its menu.
+`Icon { name: "audio-volume-high"; size: 16dp }`. `name` is a theme icon name, an application id (`firefox`, `org.kde.dolphin`) or a path. Names resolve through the user's icon theme (`PALETTES_ICON_THEME`, KDE or GTK settings), its parents and `hicolor`; app ids through installed desktop entries. Paths resolve like other assets. Icons are picked and SVGs rasterized for their size on the densest output (`size: 18dp` at scale 2 is 36 px), again when that scale changes; bitmaps far larger than that, such as a tray's 256 px pixmap, are shrunk close to it so they stay sharp. Icon paths in records (`Toplevel.icon`, `App.icon`) can be passed to `name` as they are. `on context_menu` runs on a secondary press over the icon, as on a `Button`, so a right-click on a tray icon can open its menu.
 
 ## Shell states
 

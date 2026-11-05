@@ -10,6 +10,13 @@ pub fn shrink(image: &Image, max_pixels: u32) -> Image {
     shrink_by(image, (ratio.sqrt().ceil() as u32).max(1))
 }
 
+/// `image` shrunk by a whole factor until its longer side is under twice
+/// `side`: an icon much larger than it shows aliases when the GPU samples
+/// it, as a 256 px tray pixmap does at 16 px.
+pub fn fit(image: &Image, side: u32) -> Image {
+    shrink_by(image, image.width().max(image.height()) / side.max(1))
+}
+
 /// `image` scaled down by `factor`, each pixel the alpha-weighted mean of
 /// the block it covers.
 fn shrink_by(image: &Image, factor: u32) -> Image {
