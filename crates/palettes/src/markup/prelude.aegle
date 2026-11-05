@@ -91,7 +91,7 @@
 // is open: `state.name = value` fills states, its top-level functions are host
 // actions. `Panel { edge: popup }` opens beside the control under the pointer.
 
-record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
+record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int; layout: string; columns: int; column: int; maximized: bool }
 record Colors { background: string; active: string; inactive: string; shadow: string }
 record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool; floating: bool; fullscreen: bool }
 record App { id: string; name: string; icon: string }

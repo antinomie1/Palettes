@@ -10,7 +10,7 @@ fn workspace(id: u64, output: &str, active: bool) -> Workspace {
         output: output.into(),
         active,
         focused: false,
-        windows: 0,
+        ..Workspace::default()
     }
 }
 

@@ -249,7 +249,7 @@ Panel {
 ## Records
 
 ```text
-record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int }
+record Workspace { id: int; name: string; index: int; output: string; active: bool; focused: bool; windows: int; layout: string; columns: int; column: int; maximized: bool }
 record Colors { background: string; active: string; inactive: string; shadow: string }   // "#rrggbbaa"
 record Toplevel { id: int; title: string; app_id: string; icon: string; workspace: int; focused: bool; floating: bool; fullscreen: bool }
 record App { id: string; name: string; icon: string }
@@ -268,7 +268,7 @@ record Memory { used: int; total: int; percent: float }   // MiB; percent 1.0 = 
 record BluetoothDevice { address: string; name: string; icon: string; paired: bool; connected: bool; battery: int }
 ```
 
-`Colors`: Pastel's `background`, `[window] active-color`, `inactive-color` and `shadow-color`. `Workspace.active`: shown on its output. `focused`: shown on the focused output. `Toplevel.floating`: out of the tiling layout; `fullscreen`: covers its output (both Pastel only).
+`Colors`: Pastel's `background`, `[window] active-color`, `inactive-color` and `shadow-color`. `Workspace.active`: shown on its output. `focused`: shown on the focused output. `layout`: its layout's name (Pastel's `scrolling`), empty where the compositor does not say; `columns`, `column` (the focused one, from 1, 0 for none) and `maximized` (it fills the area) say where the focus sits, as dwm's layout symbol does (Pastel only). `Toplevel.floating`: out of the tiling layout; `fullscreen`: covers its output (both Pastel only).
 
 `Battery.percent`: `1.0` = 100 %. `state`: `charging`, `discharging`, `full`, `empty`, `pending` or empty. `time`: seconds until empty or full, 0 when unknown. `Player.name`: the bus name after `org.mpris.MediaPlayer2.`; `status`: `Playing`, `Paused` or `Stopped`; `art`: the cover as a local file; `length` in seconds. `Notification.urgency`: 0 low, 1 normal, 2 critical; `icon`: its image, else the app's icon; `actions`: how many buttons it has in `notification_actions`. `TrayItem.status`: `Active`, `Passive` (may be hidden) or `NeedsAttention`. `MenuEntry.toggle`: `checkmark`, `radio` or empty. `Network.kind`: `wifi`, `ethernet`, `vpn`, `other` or empty; `connected`: full connectivity; `strength` 0–100. `BluetoothDevice.battery`: 0–100, or -1 when it reports none.
 

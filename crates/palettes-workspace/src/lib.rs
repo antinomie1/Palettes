@@ -57,7 +57,7 @@ pub struct Output {
 }
 
 /// A workspace.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Workspace {
     /// Stable for the workspace's life.
     pub id: u64,
@@ -73,6 +73,15 @@ pub struct Workspace {
     pub focused: bool,
     /// How many windows it holds.
     pub windows: u32,
+    /// Its layout's name, such as Pastel's `scrolling`; empty where the
+    /// compositor does not say.
+    pub layout: String,
+    /// Columns its layout arranges.
+    pub columns: u32,
+    /// The focused column, from 1; 0 for none or unknown.
+    pub column: u32,
+    /// The focused column fills the working area.
+    pub maximized: bool,
 }
 
 /// A toplevel window.

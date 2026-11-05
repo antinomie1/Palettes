@@ -53,7 +53,7 @@ impl Model {
                     output: output.clone(),
                     active,
                     focused: active && focused == Some(output.as_str()),
-                    windows: 0,
+                    ..Workspace::default()
                 });
             }
         }

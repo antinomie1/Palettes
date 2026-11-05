@@ -22,6 +22,10 @@ fn state() -> pastel_ipc::State {
                 active: true,
                 focused: true,
                 windows: 1,
+                layout: "scrolling".into(),
+                columns: 1,
+                column: 1,
+                maximized: false,
             },
             pastel_ipc::Workspace {
                 id: 4,
@@ -30,6 +34,10 @@ fn state() -> pastel_ipc::State {
                 active: false,
                 focused: false,
                 windows: 0,
+                layout: "scrolling".into(),
+                columns: 0,
+                column: 0,
+                maximized: false,
             },
         ],
         windows: vec![pastel_ipc::Window {
@@ -93,6 +101,8 @@ fn follows_and_drives_pastel() {
     assert_eq!(desktop.focused_window().unwrap().title, "htop");
     assert_eq!(desktop.focused_window().unwrap().icon, "utilities-terminal");
     assert_eq!(desktop.focused_workspace().unwrap().name, "1");
+    let shown = desktop.focused_workspace().unwrap();
+    assert_eq!((shown.layout.as_str(), shown.columns, shown.column), ("scrolling", 1, 1));
     assert_eq!(desktop.workspaces_on("DP-1").count(), 2);
     assert_eq!(desktop.keyboard_layout, "English (US)");
     assert_eq!(desktop.colors.active, "#a6c8ffff");

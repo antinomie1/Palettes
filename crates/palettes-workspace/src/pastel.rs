@@ -37,6 +37,10 @@ pub fn desktop(state: pastel_ipc::State) -> Desktop {
                 active: w.active,
                 focused: w.focused,
                 windows: w.windows,
+                layout: w.layout,
+                columns: w.columns,
+                column: w.column,
+                maximized: w.maximized,
             })
             .collect(),
         windows: state

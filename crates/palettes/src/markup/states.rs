@@ -35,6 +35,10 @@ fn workspace(w: &palettes_workspace::Workspace) -> Data {
         Data::Bool(w.active),
         Data::Bool(w.focused),
         Data::Int(i64::from(w.windows)),
+        string(&w.layout),
+        Data::Int(i64::from(w.columns)),
+        Data::Int(i64::from(w.column)),
+        Data::Bool(w.maximized),
     ])
 }
 
