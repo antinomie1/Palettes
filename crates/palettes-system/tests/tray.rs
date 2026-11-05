@@ -166,12 +166,24 @@ fn items_register_and_menus_open() {
             (4, "Inner", false, 1, true)
         ]
     );
+    let event = |id: i32, kind: &str| {
+        let event = fake.called("Event");
+        assert_eq!(
+            (event.path.as_str(), &event.body[..2]),
+            ("/Menu", &[Value::I32(id), Value::str(kind)][..])
+        );
+    };
+    event(0, "opened");
     tray.select(1);
-    let event = fake.called("Event");
-    assert_eq!(
-        (event.path.as_str(), &event.body[..2]),
-        ("/Menu", &[Value::I32(1), Value::str("clicked")][..])
-    );
+    event(1, "clicked");
+    until(&states, |s| s.menu.is_none());
+
+    // Dismissed without a choice.
+    tray.open_menu(&shown.id);
+    event(0, "opened");
+    until(&states, |s| s.menu.is_some());
+    tray.close_menu();
+    event(0, "closed");
     until(&states, |s| s.menu.is_none());
 
     tray.activate(&shown.id, 3, 4);

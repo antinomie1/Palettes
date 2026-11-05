@@ -172,7 +172,7 @@ Text { text: time; opacity_animation: [[0.5, 1], 800ms, ease_in_out, alternate] 
 
 ## Icon
 
-`Icon { name: "audio-volume-high"; size: 16dp }`. `name` is a theme icon name, an application id (`firefox`, `org.kde.dolphin`) or a path. Names resolve through the user's icon theme (`PALETTES_ICON_THEME`, KDE or GTK settings), its parents and `hicolor`; app ids through installed desktop entries. Paths resolve like other assets. Icons are picked and SVGs rasterized for their size on the densest output (`size: 18dp` at scale 2 is 36 px), again when that scale changes. Icon paths in records (`Toplevel.icon`, `App.icon`) can be passed to `name` as they are.
+`Icon { name: "audio-volume-high"; size: 16dp }`. `name` is a theme icon name, an application id (`firefox`, `org.kde.dolphin`) or a path. Names resolve through the user's icon theme (`PALETTES_ICON_THEME`, KDE or GTK settings), its parents and `hicolor`; app ids through installed desktop entries. Paths resolve like other assets. Icons are picked and SVGs rasterized for their size on the densest output (`size: 18dp` at scale 2 is 36 px), again when that scale changes. Icon paths in records (`Toplevel.icon`, `App.icon`) can be passed to `name` as they are. `on context_menu` runs on a secondary press over the icon, as on a `Button`, so a right-click on a tray icon can open its menu.
 
 ## Shell states
 
@@ -233,7 +233,11 @@ Panel {
     Row {
         Text { text: str(int(battery.percent * 100.0)) + "%" }
         for item in tray key item.id {
-            Icon { name: item.icon; size: 18dp }
+            Icon {
+                name: item.icon
+                size: 18dp
+                on context_menu { host.tray_menu(item.id); if item.menu { host.open("traymenu.aegle") } }
+            }
             Button { text: item.title; on clicked { host.tray_activate(item.id) } }
         }
     }
@@ -286,7 +290,7 @@ record BluetoothDevice { address: string; name: string; icon: string; paired: bo
 | `host.notification_action(int, string)` | Invoke a notification's action by key (`default`: a click on it); dismisses it unless resident |
 | `host.tray_activate(string)`, `host.tray_secondary(string)` | Click or middle-click an item (`TrayItem.id`); an item that is only a menu opens it |
 | `host.tray_scroll(string, int)` | Scroll over an item |
-| `host.tray_menu(string)` | Read an item's menu into `tray_menu`; then `host.open` a popup showing it |
+| `host.tray_menu(string)` | Read an item's menu into `tray_menu`; then `host.open` a popup showing it. An item without one (`TrayItem.menu` false) shows its own. A popup declaring `tray_menu` closes the menu when it closes, by a click elsewhere too |
 | `host.tray_select(int)` | Choose a `tray_menu` entry (`MenuEntry.id`), which closes the menu |
 | `host.toggle_wifi()`, `host.wifi_scan()`, `host.wifi_disconnect()` | |
 | `host.wifi_connect(string, string)` | SSID and password: an empty password uses a saved connection, or joins an open network |

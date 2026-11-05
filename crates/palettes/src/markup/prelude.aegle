@@ -71,7 +71,7 @@
 //   host.dismiss_notification(int)  host.dismiss_notifications()
 //   host.notification_action(int, string)   id and key; "default" is a click on it
 //   host.tray_activate(string)  host.tray_secondary(string)  host.tray_scroll(string, int)
-//   host.tray_menu(string)         read an item's menu into tray_menu
+//   host.tray_menu(string)         read an item's menu into tray_menu, or show the item's own
 //   host.tray_select(int)          choose a tray_menu entry
 //   host.toggle_wifi()  host.wifi_scan()  host.wifi_disconnect()
 //   host.wifi_connect(string, string)    ssid and password ("" for a saved or open network)

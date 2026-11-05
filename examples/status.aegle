@@ -37,13 +37,19 @@ Panel {
         }
         Icon { name: battery.icon; size: 18dp; visible: battery.present }
         Text { text: str(int(battery.percent * 100.0)) + "%"; visible: battery.present }
+        // Click an item to activate it, right-click it for its menu; an
+        // item without an exported menu shows its own.
         for item in tray key item.id {
-            Icon { name: item.icon; size: 18dp; tooltip: item.tooltip }
-            Button { text: item.title; on clicked { host.tray_activate(item.id) } }
+            Icon {
+                name: item.icon
+                size: 18dp
+                tooltip: item.tooltip
+                on context_menu { host.tray_menu(item.id); if item.menu { host.open("traymenu.aegle") } }
+            }
             Button {
-                text: "▾"
-                visible: item.menu
-                on clicked { host.tray_menu(item.id); host.open("traymenu.aegle") }
+                text: item.title
+                on clicked { host.tray_activate(item.id) }
+                on context_menu { host.tray_menu(item.id); if item.menu { host.open("traymenu.aegle") } }
             }
         }
     }

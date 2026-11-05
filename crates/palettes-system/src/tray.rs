@@ -298,6 +298,17 @@ fn flatten(node: &Value, depth: u32, key: &str, out: &mut Vec<MenuEntry>) {
     }
 }
 
+/// Sends the open menu a `com.canonical.dbusmenu` event about `entry`.
+fn event(bus: &mut Client, open: &Open, entry: i32, kind: &str) {
+    let body = vec![
+        Value::I32(entry),
+        Value::str(kind),
+        Value::variant(Value::I32(0)),
+        Value::U32(0),
+    ];
+    bus.invoke(&open.bus, &open.path, MENU, "Event", body);
+}
+
 impl Service {
     fn register(&mut self, bus: &mut Client, service: &str, sender: &str) {
         let (name, path) = match service.find('/') {
@@ -585,26 +596,18 @@ impl client::Service for Service {
                     stale: false,
                 });
                 self.read_menu(bus);
+                // Some applications fill or update the menu only once shown.
+                if let Some(open) = &self.menu {
+                    event(bus, open, 0, "opened");
+                }
             }
             Command::Select(entry) => {
                 let Some(open) = self.menu.take() else { return };
-                let body = vec![
-                    Value::I32(entry),
-                    Value::str("clicked"),
-                    Value::variant(Value::I32(0)),
-                    Value::U32(0),
-                ];
-                bus.invoke(&open.bus, &open.path, MENU, "Event", body);
+                event(bus, &open, entry, "clicked");
             }
             Command::CloseMenu => {
                 if let Some(open) = self.menu.take() {
-                    let body = vec![
-                        Value::I32(0),
-                        Value::str("closed"),
-                        Value::variant(Value::I32(0)),
-                        Value::U32(0),
-                    ];
-                    bus.invoke(&open.bus, &open.path, MENU, "Event", body);
+                    event(bus, &open, 0, "closed");
                 }
             }
         }

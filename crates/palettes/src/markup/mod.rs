@@ -248,6 +248,9 @@ impl Document {
         if let Some(script) = &self.script {
             crate::script::unload(script);
         }
+        if self.is_popup() {
+            system::popup_closed(shell, &self.states);
+        }
         if self.placement.edge == elements::Edge::Lock
             && let Err(e) = shell.unlock()
         {

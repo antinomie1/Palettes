@@ -391,11 +391,14 @@ element! {
         set passive: bool => |p, v| update(p, |s| s.passive = v);
         set blur: bool => set_blur;
     }
-    /// An icon by theme name or application id, or an image path; `size` dp square.
+    /// An icon by theme name or application id, or an image path; `size` dp
+    /// square. `context_menu` runs on a secondary press over it, as tray
+    /// icons open their menus.
     pub Icon(ImageView) {
         create |parent| icon_view(parent);
         set name: line => show_icon;
         set size: length => icon_size;
+        event context_menu => |view, run| view.on_context_menu(move |_, _| run());
     }
     /// An image file relative to the asset roots, placed by `fit`. In a
     /// `Stack` with `fit: cover` and a `radius`, it is a rounded background.

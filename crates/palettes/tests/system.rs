@@ -42,6 +42,7 @@ Panel {
     state palette: list<string> = []
     Row {
         Text { text: str(len(notifications)) + " " + str(len(tray)) }
+        Icon { name: "x"; on context_menu { host.tray_menu("a") } }
         Button { text: "x"; on clicked {
             host.set_power_profile("balanced")
             host.media_play_pause()

@@ -271,6 +271,16 @@ pub(super) fn bind(shell: &Shell, shared: &Rc<RefCell<View>>, owner: &Node) -> R
     Ok(())
 }
 
+/// Closes the tray menu a popup showed, however it closed: chosen from,
+/// `host.close` or a click elsewhere.
+pub(super) fn popup_closed(shell: &Shell, states: &[(String, Type)]) {
+    if states.iter().any(|(name, _)| name == "tray_menu")
+        && let Ok(tray) = shell.system::<Tray>()
+    {
+        tray.close_menu();
+    }
+}
+
 fn text(a: &[Data], at: usize) -> &str {
     match a.get(at) {
         Some(Data::String(text)) => text,

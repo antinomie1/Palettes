@@ -1,4 +1,5 @@
-// A tray item's menu, opened by status.aegle beside the item.
+// A tray item's menu, opened by a right-click in status.aegle beside the
+// item. Closing it any way closes the item's menu.
 use "palettes.aegle"
 
 Panel {
@@ -16,9 +17,9 @@ Panel {
         } else if entry.submenu {
             Text { text: entry.label; foreground: #a6adc8 }
         } else if entry.checked {
-            Button { text: "✓ " + entry.label; on clicked { host.tray_select(entry.id); host.close("traymenu.aegle") } }
+            Button { text: "✓ " + entry.label; enabled: entry.enabled; on clicked { host.tray_select(entry.id); host.close("traymenu.aegle") } }
         } else {
-            Button { text: entry.label; on clicked { host.tray_select(entry.id); host.close("traymenu.aegle") } }
+            Button { text: entry.label; enabled: entry.enabled; on clicked { host.tray_select(entry.id); host.close("traymenu.aegle") } }
         }
     }
 }
