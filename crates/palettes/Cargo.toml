@@ -9,9 +9,11 @@ repository.workspace = true
 readme = "../../README.md"
 
 [features]
-default = ["svg"]
+default = ["svg", "photos"]
 # SVG icons and images; most icon themes ship nothing else.
 svg = ["dep:aegle-image", "aegle-image/svg"]
+# JPEG and WebP images, which most wallpapers are; PNG needs no feature.
+photos = ["dep:aegle-image", "aegle-image/jpeg", "aegle-image/webp"]
 # am3's Material 3 controls as `Md*` elements in panel documents.
 am3 = ["dep:am3"]
 
