@@ -407,7 +407,12 @@ impl SurfacePlatform for Wayland {
                 Ok(true)
             }
             Ok(false) => Ok(false),
-            Err(error) => Err(Error::Draw(error)),
+            // Asking again at once would fail again in a busy loop; the
+            // caller asks for another frame if it can do better.
+            Err(error) => {
+                window.redraw_requested = false;
+                Err(Error::Draw(error))
+            }
         }
     }
 }

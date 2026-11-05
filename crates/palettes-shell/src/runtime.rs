@@ -17,7 +17,8 @@ use palettes_wayland::{Wayland, WindowSurface};
 use std::{cell::RefCell, rc::Rc, time::Instant};
 
 /// Pixels of the largest image a surface uploads: a 3840 × 2400 wallpaper,
-/// 35 MiB of RGBA, which the default memory budget holds beside the
+/// 35 MiB of RGBA, twice over while it uploads (page and staging), which the
+/// default memory budget holds beside the image it replaces and the
 /// surface's text. Budgets are limits: smaller images take what they need.
 pub const MAX_IMAGE_PIXELS: u32 = 3840 * 2400;
 
@@ -47,6 +48,8 @@ pub(crate) struct Entry {
     pub tooltip: Option<WindowId>,
     /// A session lock surface.
     pub lock: bool,
+    /// Its last frame failed to draw.
+    pub failed: bool,
 }
 
 pub(crate) struct Runtime {
@@ -164,6 +167,7 @@ impl Runtime {
             fitting: None,
             tooltip: None,
             lock: false,
+            failed: false,
         });
         Ok((id, ui))
     }
@@ -363,7 +367,26 @@ impl Runtime {
                     Err(aegle_render_vulkan::Error::SurfaceOutOfDate) => Ok(false),
                     Err(error) => Err(error.into()),
                 }
-            })?;
+            });
+            let presented = match presented {
+                Ok(presented) => {
+                    entry.failed = false;
+                    presented
+                }
+                // One surface's failed frame, such as an image beyond its
+                // memory budget, must not end the shell: it frees the
+                // surface's images and draws once more from nothing, then
+                // waits for its next change.
+                Err(aegle_platform::Error::Draw(error)) => {
+                    eprintln!("palettes: drawing a surface: {error}");
+                    renderer.release_images()?;
+                    if !std::mem::replace(&mut entry.failed, true) {
+                        platform.request_redraw(id)?;
+                    }
+                    continue;
+                }
+                Err(error) => return Err(error.into()),
+            };
             if presented {
                 entry.ui.clear_damage();
             } else {
