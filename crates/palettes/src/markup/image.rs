@@ -49,6 +49,26 @@ thread_local! {
 /// Pixels SVGs in an `Image` are rasterized at.
 const IMAGE_PIXELS: u32 = 64;
 
+/// RGBA bytes a bitmap may decode to before it shrinks to
+/// [`palettes_shell::MAX_IMAGE_PIXELS`]: 128 Mpx, so 8K and larger photos
+/// show, where aegle's 64 MiB default refuses anything past 5K.
+#[cfg(feature = "photos")]
+const DECODE_BYTES: usize = 512 << 20;
+
+/// Decodes the bitmap at `path` into `view`. A failure goes through the
+/// view's own loading, so its error handlers run.
+fn decode(view: &ImageView, path: &Path) -> aegle_ui::Result<()> {
+    #[cfg(feature = "photos")]
+    if let Ok(image) = std::fs::read(path)
+        .map_err(drop)
+        .and_then(|bytes| aegle_image::decode_with_limit(&bytes, DECODE_BYTES).map_err(drop))
+    {
+        view.set_image(&image);
+        return Ok(());
+    }
+    view.load(path)
+}
+
 /// Colors in the palette: tokens `palette.1` to `palette.5`.
 pub const PALETTE_SIZE: usize = 5;
 
@@ -250,7 +270,7 @@ fn load(view: &ImageView, path: &Path, look: Look) -> aegle_ui::Result<()> {
         view.set_image(&image);
         return Ok(());
     }
-    view.load(path)?;
+    decode(view, path)?;
     let Some(mut image) = view.image() else {
         return Ok(());
     };
