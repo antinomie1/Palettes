@@ -31,6 +31,7 @@ A column whose properties place its surface. All of them can be bound.
 | `output` | line | `""` | Only this output (`DP-1`); empty for every output |
 | `blur` | bool | `false` | The compositor blurs the desktop behind the panel's rounded shape |
 | `passive` | bool | `false` | A popup that takes no keyboard and stays open on clicks elsewhere |
+| `keys` | list of key names | | Keys the panel takes before its controls, such as `["Up", "Down", "Left", "Right"]` for a list beside a search field: a press runs `on key`, with the name in `self.key`. Names are a character (`a`), `F1`–`F24`, or `Enter` `Tab` `Escape` `Backspace` `Delete` `Left` `Right` `Up` `Down` `Home` `End` `PageUp` `PageDown` |
 | `movable` | bool | `false` | A press on no control drags the panel around its output, as a window by its title bar; it stays where it is dropped until it closes or its placement changes |
 
 Layout properties (`padding`, `gap`, `background`, …) apply as on `Column`.
@@ -166,6 +167,10 @@ Text { text: time; opacity_animation: [[0.5, 1], 800ms, ease_in_out, alternate] 
 - `Shape` draws SVG path data in dp from its top-left corner; `Arc` draws `sweep` degrees from `start`, clockwise from the top, on the largest circle that fits. Both take `fill`, `stroke`, `stroke_width` and `cap` (`butt`, `round`, `square`) and have no size of their own.
 - `scale_animation`, `rotation_animation` and `opacity_animation` take `[[values...], duration]`, optionally an easing, then `forever` or `alternate`. They start when the element is built; a running one keeps the panel drawing every frame, and nothing else does.
 - Every `*_transition` takes a duration, `[duration, easing]` or `spring(stiffness, damping)`; an easing is `linear`, `ease_in`, `ease_out`, `ease_in_out`, `cubic_bezier(x1, y1, x2, y2)` or a spring.
+
+## Reveal
+
+`Reveal { active: entry.selected; ... }` is a `Stack` that scrolls the `ScrollView`s around it to show itself each time `active` turns true, so a selection moved by keys stays in view.
 
 ## Image
 

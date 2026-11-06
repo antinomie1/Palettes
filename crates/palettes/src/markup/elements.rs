@@ -4,7 +4,7 @@
 //! their files.
 
 use aegle_loader::{Elements, element};
-use aegle_ui::{ColorSlot, Container, Node, NodeId, Theme};
+use aegle_ui::{ColorSlot, Container, InputKind, Key, Node, NodeId, Result, Theme};
 use aegle_widgets::{Fit, ImageView, ShaderView, Widgets};
 use palettes_shell::{KeyboardInteractivity, Layer, PanelOptions, PopupOptions, Side, Surface};
 use std::{cell::RefCell, collections::HashMap};
@@ -139,6 +139,9 @@ struct Registered {
     /// The compositor blurs the desktop behind the panel's shape.
     blur: bool,
     surface: Option<Surface>,
+    /// Keys it takes before its controls, by name, and the last one taken.
+    keys: Vec<String>,
+    key: String,
 }
 
 thread_local! {
@@ -162,6 +165,8 @@ fn panel(parent: &Container) -> Container {
                 placement: Placement::default(),
                 blur: false,
                 surface: None,
+                keys: Vec::new(),
+                key: String::new(),
             },
         );
     });
@@ -203,6 +208,70 @@ fn set_blur(container: &Container, blur: bool) {
         && let Err(e) = surface.set_blur(container, blur)
     {
         eprintln!("palettes: blurring a panel: {e}");
+    }
+}
+
+/// A key's name in `keys`: its character (`a`), `F1`, or `Up`, `Enter`, ….
+fn key_name(key: Key) -> String {
+    match key {
+        Key::Character(c) => c.to_string(),
+        Key::Function(n) => format!("F{n}"),
+        other => format!("{other:?}"),
+    }
+}
+
+fn set_keys(container: &Container, keys: aegle_loader::Lines<'_>) {
+    PANELS.with_borrow_mut(|panels| {
+        if let Some(panel) = panels.get_mut(&container.id()) {
+            panel.keys = keys.to_vec().into_iter().map(String::from).collect();
+        }
+    });
+}
+
+/// Runs `run` for each press of a key in `keys`, before the focused control
+/// sees it: arrows move through a launcher's list rather than its search
+/// field's caret.
+fn on_key(container: &Container, run: impl Fn() -> Result + 'static) {
+    let id = container.id();
+    container.on_input_capture(move |_, event| {
+        let InputKind::Key(key) = &event.kind else {
+            return Ok(());
+        };
+        let (pressed, name) = (key.pressed, key_name(key.key));
+        let taken = PANELS.with_borrow_mut(|panels| {
+            let panel = panels.get_mut(&id)?;
+            let taken = panel.keys.contains(&name);
+            if taken && pressed {
+                panel.key = name;
+            }
+            Some(taken)
+        });
+        if taken != Some(true) {
+            return Ok(());
+        }
+        event.prevent_default();
+        event.stop_propagation();
+        if pressed { run() } else { Ok(()) }
+    });
+}
+
+fn last_key(container: &Container) -> String {
+    PANELS.with_borrow(|panels| {
+        panels
+            .get(&container.id())
+            .map(|p| p.key.clone())
+            .unwrap_or_default()
+    })
+}
+
+/// Scrolls `stack` into view on the next frame: a list entry that changes
+/// is built anew, and has no place to scroll to until it is laid out.
+fn reveal(stack: &Container, active: bool) {
+    if active {
+        stack.on_frame(|node, _| {
+            node.ensure_visible();
+            false
+        });
     }
 }
 
@@ -399,6 +468,16 @@ element! {
         set passive: bool => |p, v| update(p, |s| s.passive = v);
         set movable: bool => |p, v| update(p, |s| s.movable = v);
         set blur: bool => set_blur;
+        set keys: lines => set_keys;
+        event key => on_key;
+        get key: string => last_key;
+    }
+    /// A `Stack` that scrolls the views around it to show itself each time
+    /// `active` turns true, as a list's selected entry.
+    pub Reveal(Container) {
+        layout box;
+        create |parent| parent.stack();
+        set active: bool => reveal;
     }
     /// An icon by theme name or application id, or an image path; `size` dp
     /// square. `context_menu` runs on a secondary press over it, as tray
@@ -443,6 +522,7 @@ pub fn elements() -> Elements {
     #[cfg(not(feature = "am3"))]
     let base = Elements::new();
     base.with::<Panel>()
+        .with::<Reveal>()
         .with::<Icon>()
         .with::<Image>()
         .with::<Shader>()

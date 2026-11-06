@@ -34,6 +34,28 @@ fn panels_take_visual_effects() {
 }
 
 #[test]
+fn panels_take_keys_and_reveal_entries() {
+    let list = document(
+        "list.aegle",
+        r#"use "palettes.aegle"
+Panel {
+    edge: center
+    keyboard: exclusive
+    keys: ["Up", "Down", "F1", "a"]
+    state picked: string = ""
+    state chosen: bool = false
+    on key { picked = self.key }
+    TextField { text: "" }
+    ScrollView { Reveal { active: chosen; Text { text: picked } } }
+}
+"#,
+    );
+    markup::check(&list).unwrap();
+    let bad = document("bad-keys.aegle", "Panel { keys: 3 }");
+    assert!(markup::check(&bad).is_err());
+}
+
+#[test]
 fn panels_take_shapes_animations_and_image_backgrounds() {
     let fx = document(
         "fx.aegle",
