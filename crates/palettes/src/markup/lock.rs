@@ -20,22 +20,6 @@ pub(super) fn surface(shell: &Shell, output: &OutputInfo) -> Result<Surface> {
     shell.lock_surface(output.id)
 }
 
-/// Gives the keyboard to the first text field, so typing goes to the
-/// password at once.
-pub(super) fn focus_field(surface: &Surface) -> Result<()> {
-    surface.ui()?.with_state(|state| {
-        let mut pending = vec![state.root()];
-        while let Some(id) = pending.pop() {
-            if state.element(id).control().editor().is_some() {
-                return state.set_focus(Some(id));
-            }
-            let children: Vec<_> = state.children(id).collect();
-            pending.extend(children.into_iter().rev());
-        }
-        Ok(())
-    })
-}
-
 /// Registers `host.unlock`; without a shell it does nothing, for checking.
 pub(super) fn register(shell: Option<&Shell>) {
     let Some(shell) = shell else {

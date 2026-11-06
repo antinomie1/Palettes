@@ -10,6 +10,7 @@
 //! (`bar.luau` for `bar.aegle`) runs while it is open.
 
 pub(crate) mod actions;
+mod dialog;
 pub mod elements;
 mod follow;
 pub mod image;
@@ -24,7 +25,7 @@ mod system;
 use aegle_loader::{Elements, Program, View, markup::Type};
 use aegle_ui::{Node, Result, Theme, Ui};
 use palettes_assets::{Roots, Watcher};
-use palettes_shell::{OutputInfo, Shell, Surface};
+use palettes_shell::{KeyboardInteractivity, OutputInfo, Shell, Surface};
 use std::{
     cell::RefCell,
     path::{Path, PathBuf},
@@ -138,6 +139,7 @@ fn probe(shell: &Shell, program: &Program) -> Result<elements::Placement> {
 
 fn open_panel(
     shell: &Shell,
+    path: &Path,
     program: &Program,
     states: &[(String, Type)],
     output: &OutputInfo,
@@ -164,8 +166,12 @@ fn open_panel(
         view,
     };
     attach(shell, &open, states)?;
-    if placement.edge == elements::Edge::Lock {
-        lock::focus_field(&open.surface)?;
+    match placement.edge {
+        elements::Edge::Lock => dialog::focus_field(&open.surface)?,
+        elements::Edge::Center if placement.keyboard == KeyboardInteractivity::Exclusive => {
+            dialog::attach(shell, &open.surface, path.to_owned())?
+        }
+        _ => {}
     }
     Ok(open)
 }
@@ -205,7 +211,7 @@ impl Document {
             if !wanted || self.panels.iter().any(|p| p.output.id == output.id) {
                 continue;
             }
-            let open = open_panel(shell, &self.program, &self.states, &output, &placement)?;
+            let open = open_panel(shell, &self.path, &self.program, &self.states, &output, &placement)?;
             self.panels.push(open);
         }
         Ok(())
@@ -388,7 +394,15 @@ fn document_path(name: &str) -> Result<PathBuf> {
 
 /// Opens or closes the document `name`, or flips it when `want` is `None`.
 fn show(name: &str, want: Option<bool>) -> Result<()> {
-    let path = document_path(name)?;
+    show_path(&document_path(name)?, want)
+}
+
+/// Closes the open document at `path`.
+fn close_path(path: &Path) -> Result<()> {
+    show_path(path, Some(false))
+}
+
+fn show_path(path: &Path, want: Option<bool>) -> Result<()> {
     with_runner(|runner| {
         let index = runner.documents.iter().position(|d| d.path == path);
         match (index, want) {
@@ -396,7 +410,7 @@ fn show(name: &str, want: Option<bool>) -> Result<()> {
                 runner.documents.remove(index).close(&runner.shell);
                 Ok(())
             }
-            (None, None | Some(true)) => open_document(runner, &path),
+            (None, None | Some(true)) => open_document(runner, path),
             _ => Ok(()),
         }
     })
