@@ -27,11 +27,13 @@ struct Theme {
 ///
 /// The theme is `PALETTES_ICON_THEME`, else the desktop's (KDE's
 /// `kdeglobals`, then GTK's `settings.ini`, then KDE's or GNOME's default),
-/// else `hicolor`; parents named by
-/// `Inherits` follow, and `hicolor` and `/usr/share/pixmaps` come last.
+/// else `breeze` or `Adwaita` if installed, else `hicolor`; parents named by
+/// `Inherits` follow, and `hicolor` and the `pixmaps` beside each `icons`
+/// base come last.
 pub struct Icons {
     theme: String,
     bases: Vec<PathBuf>,
+    pixmaps: Vec<PathBuf>,
     svg: bool,
     themes: RefCell<HashMap<String, Option<Theme>>>,
     found: RefCell<HashMap<(String, u32), Option<PathBuf>>>,
@@ -63,15 +65,32 @@ impl Icons {
         let bases = home
             .into_iter()
             .chain(crate::data_dirs().into_iter().map(|d| d.join("icons")))
-            .collect();
-        Self::with(desktop_theme().unwrap_or_else(|| "hicolor".into()), bases)
+            .collect::<Vec<PathBuf>>();
+        // Desktops that name no theme still have common icons
+        // (`preferences-system`), which hicolor lacks.
+        let installed = || {
+            ["breeze", "Adwaita"]
+                .into_iter()
+                .find(|t| bases.iter().any(|b| b.join(t).join("index.theme").is_file()))
+                .map(String::from)
+        };
+        let theme = desktop_theme()
+            .or_else(installed)
+            .unwrap_or_else(|| "hicolor".into());
+        Self::with(theme, bases)
     }
 
     /// Theme `theme`, looked up under these icon base directories.
     pub fn with(theme: String, bases: Vec<PathBuf>) -> Self {
+        let pixmaps = bases
+            .iter()
+            .filter(|b| b.file_name().is_some_and(|n| n == "icons"))
+            .filter_map(|b| Some(b.parent()?.join("pixmaps")))
+            .collect();
         Self {
             theme,
             bases,
+            pixmaps,
             svg: false,
             themes: RefCell::default(),
             found: RefCell::default(),
@@ -147,8 +166,12 @@ impl Icons {
 
     /// The file for `name` in theme `theme`: an exact size first, then the
     /// nearest size.
+    fn extensions(&self) -> &'static [&'static str] {
+        if self.svg { &["png", "svg"] } else { &["png"] }
+    }
+
     fn in_theme(&self, theme: &Theme, name: &str, size: u32) -> Option<PathBuf> {
-        let extensions: &[&str] = if self.svg { &["png", "svg"] } else { &["png"] };
+        let extensions = self.extensions();
         let file = |dir: &Dir| {
             theme.bases.iter().find_map(|base| {
                 extensions
@@ -193,10 +216,12 @@ impl Icons {
                 queue.push("hicolor".into());
             }
         }
-        let pixmaps = crate::data_dirs().into_iter().map(|d| d.join("pixmaps"));
-        pixmaps
-            .map(|d| d.join(format!("{name}.png")))
-            .find(|p| p.is_file())
+        self.pixmaps.iter().find_map(|dir| {
+            self.extensions()
+                .iter()
+                .map(|e| dir.join(format!("{name}.{e}")))
+                .find(|p| p.is_file())
+        })
     }
 
     /// The icon file for a name such as `firefox` or `audio-volume-high` at

@@ -51,6 +51,8 @@ fn icons_follow_theme_parents_sizes_and_desktop_entries() {
         "[Icon Theme]\nName=Hicolor\nDirectories=scalable/apps\n\n[scalable/apps]\nSize=64\nType=Scalable\nMinSize=8\nMaxSize=512\n",
     );
     write(icons.join("hicolor/scalable/apps/editor.svg"), "");
+    // Beside the icons base, as /usr/share/pixmaps is beside /usr/share/icons.
+    write(dir.join("pixmaps/Shell.svg"), "");
     write(
         apps.join("applications/org.example.Editor.desktop"),
         "[Desktop Entry]\nType=Application\nName=Editor\nName[zh_CN]=编辑器\nIcon=editor\nExec=editor %F\nStartupWMClass=edit\n",
@@ -74,7 +76,9 @@ fn icons_follow_theme_parents_sizes_and_desktop_entries() {
             .ends_with("16x16/apps/term.png")
     );
     assert_eq!(icons.lookup("editor", 32), None, "SVG only when asked");
+    assert_eq!(icons.lookup("Shell", 32), None);
     let icons = icons.with_svg(true);
+    assert_eq!(icons.lookup("Shell", 32), Some(dir.join("pixmaps/Shell.svg")));
     assert!(
         icons
             .lookup("editor", 32)
