@@ -10,7 +10,7 @@ use pipewire::{
     self as pw,
     device::{Device, DeviceListener},
     metadata::{Metadata, MetadataListener},
-    node::{Node, NodeListener},
+    node::{Node, NodeChangeMask, NodeListener},
     spa::{
         self,
         param::ParamType,
@@ -332,7 +332,11 @@ pub fn run(
                     let listener = node
                         .add_listener_local()
                         // The registry's properties are a subset; the route is only here.
+                        // Updates without PROPS carry an empty dict, not the old one.
                         .info(move |info| {
+                            if !info.change_mask().contains(NodeChangeMask::PROPS) {
+                                return;
+                            }
                             let Some(props) = info.props() else { return };
                             let device = props.get("device.id").and_then(|v| v.parse::<u32>().ok());
                             let route = props
